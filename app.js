@@ -66,7 +66,38 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProposalDocument();
   initGlobalActions();
   initCatalogModal();
+  initMobileNavigation();
 });
+
+// Navegação Mobile (Alternar entre Editar e Visualizar Proposta)
+function initMobileNavigation() {
+  const btnEdit = document.getElementById('btn-mobile-edit');
+  const btnPreview = document.getElementById('btn-mobile-preview');
+  const btnPrintMobile = document.getElementById('btn-mobile-print-action');
+
+  if (btnEdit && btnPreview) {
+    btnEdit.addEventListener('click', () => {
+      btnEdit.classList.add('active');
+      btnPreview.classList.remove('active');
+      document.body.classList.remove('mobile-viewing-preview');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    btnPreview.addEventListener('click', () => {
+      btnPreview.classList.add('active');
+      btnEdit.classList.remove('active');
+      document.body.classList.add('mobile-viewing-preview');
+      renderProposalDocument();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  if (btnPrintMobile) {
+    btnPrintMobile.addEventListener('click', () => {
+      window.print();
+    });
+  }
+}
 
 // Navegação por Abas no Formulário
 function initTabs() {

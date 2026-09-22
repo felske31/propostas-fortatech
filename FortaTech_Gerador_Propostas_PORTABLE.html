@@ -453,6 +453,13 @@ input:checked + .slider:before {
   border-color: #ef4444;
 }
 
+.item-fields-grid {
+  display: grid;
+  grid-template-columns: 75px 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: flex-end;
+}
+
 .item-tag {
   font-size: 0.7rem;
   background: rgba(255, 255, 255, 0.08);
@@ -1534,6 +1541,8 @@ input:checked + .slider:before {
   }
 
   .app-header,
+  .mobile-nav-bar,
+  .mobile-floating-bar,
   .form-panel,
   .preview-toolbar,
   .export-top-bar,
@@ -1747,7 +1756,79 @@ input:checked + .slider:before {
   }
 }
 
-/* Responsive adjustments */
+/* ==========================================================================
+   SISTEMA RESPONSIVO MOBILE PROFISSIONAL (SMARTPHONES E TABLETS)
+   ========================================================================== */
+
+/* Barra de Navegação Mobile (Editar vs Visualizar) - Oculta no Desktop */
+.mobile-nav-bar {
+  display: none;
+  background: #11141e;
+  border-bottom: 1px solid #232838;
+  padding: 8px 12px;
+  position: sticky;
+  top: 56px;
+  z-index: 95;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+.mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.mobile-nav-btn.active {
+  background: linear-gradient(135deg, rgba(229,9,20,0.2) 0%, rgba(229,9,20,0.08) 100%);
+  border-color: #E50914;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(229,9,20,0.3);
+}
+
+.mobile-nav-btn svg {
+  color: inherit;
+  flex-shrink: 0;
+}
+
+/* Barra de Ação Flutuante Mobile (Visível ao Pré-visualizar no Celular) */
+.mobile-floating-bar {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 14px;
+  right: 14px;
+  z-index: 99;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.btn-mobile-action {
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 10px 25px rgba(229,9,20,0.5);
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  padding: 14px 20px !important;
+  border-radius: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Telas Médias / Tablets (max-width: 1100px) */
 @media (max-width: 1100px) {
   .app-container {
     flex-direction: column;
@@ -1762,7 +1843,242 @@ input:checked + .slider:before {
   }
 
   .preview-viewport-scroll {
-    height: 100vh;
+    height: auto;
+    min-height: 60vh;
+  }
+}
+
+/* Telas Mobile (Smartphones: max-width: 768px) */
+@media (max-width: 768px) {
+  /* Evitar auto-zoom no iOS Safari */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Header Compacto Mobile */
+  .app-header {
+    padding: 8px 12px;
+  }
+
+  .brand-wrapper {
+    gap: 8px;
+  }
+
+  .logo-badge img {
+    height: 28px !important;
+  }
+
+  .app-tagline {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-actions .btn-sm {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  #btn-reset-template {
+    display: none; /* Deixar header limpo no celular */
+  }
+
+  /* Exibir a barra de navegação mobile */
+  .mobile-nav-bar {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Estado 1: Modo Edição Ativo (Padrão no Mobile) */
+  body:not(.mobile-viewing-preview) .form-panel {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+
+  body:not(.mobile-viewing-preview) .preview-panel {
+    display: none !important;
+  }
+
+  /* Estado 2: Modo Visualização da Proposta */
+  body.mobile-viewing-preview .form-panel {
+    display: none !important;
+  }
+
+  body.mobile-viewing-preview .preview-panel {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  body.mobile-viewing-preview .preview-viewport-scroll {
+    display: flex !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 12px 8px 85px 8px !important;
+    overflow-y: visible !important;
+    justify-content: center !important;
+  }
+
+  body.mobile-viewing-preview .mobile-floating-bar {
+    display: flex !important;
+  }
+
+  /* Formulário e Controles Mobile */
+  .form-panel {
+    padding: 0;
+  }
+
+  .form-tabs {
+    padding: 6px;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-pane {
+    padding: 16px 14px 40px 14px;
+  }
+
+  .form-row, .form-row-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .item-fields-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .item-card-edit {
+    padding: 12px 10px;
+  }
+
+  .item-title-edit {
+    max-width: 170px;
+    font-size: 0.82rem;
+  }
+
+  /* Modal do Catálogo Master em Tela Cheia no Mobile */
+  .modal-overlay {
+    padding: 0 !important;
+  }
+
+  .modal-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-title {
+    font-size: 1.15rem;
+  }
+
+  .modal-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .modal-filter-bar {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .modal-category-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+
+  .modal-catalog-grid {
+    grid-template-columns: 1fr !important;
+    padding: 14px 16px 40px 16px !important;
+    gap: 14px !important;
+  }
+
+  /* Ajuste Responsivo do Documento da Proposta no Mobile */
+  #proposal-document {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 16px !important;
+  }
+
+  .doc-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 20px 14px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .doc-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .header-meta-box {
+    text-align: left;
+  }
+
+  .cover-hero-title {
+    font-size: 1.7rem !important;
+    letter-spacing: -0.5px;
+  }
+
+  .cover-client-card {
+    padding: 16px !important;
+  }
+
+  .product-illustration-container {
+    height: 220px !important;
+  }
+
+  .product-illustration-container img {
+    max-height: 190px !important;
+  }
+
+  .spec-grid-layout,
+  .terms-grid,
+  .company-profile-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .price-table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .price-table th, .price-table td {
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+
+  .total-highlight-value {
+    font-size: 1.8rem !important;
   }
 }
 
@@ -2267,6 +2583,24 @@ input:checked + .slider:before {
     </div>
   </header>
 
+  <!-- Barra de Navegação Mobile (Alternar entre Editar e Visualizar Proposta) -->
+  <div class="mobile-nav-bar" id="mobile-nav-bar">
+    <button class="mobile-nav-btn active" id="btn-mobile-edit" type="button">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+      <span>1. Editar Proposta</span>
+    </button>
+    <button class="mobile-nav-btn" id="btn-mobile-preview" type="button">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span>2. Ver Proposta</span>
+    </button>
+  </div>
+
   <!-- Main Split-Screen Workspace -->
   <div class="app-container">
     
@@ -2677,6 +3011,18 @@ input:checked + .slider:before {
         <!-- Renderizado dinamicamente pelo app.js -->
       </div>
     </div>
+  </div>
+
+  <!-- Barra de Ação Flutuante Mobile (Visível ao visualizar no celular) -->
+  <div class="mobile-floating-bar" id="mobile-floating-bar">
+    <button class="btn btn-primary btn-mobile-action" id="btn-mobile-print-action" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      <span>Gerar PDF / Imprimir</span>
+    </button>
   </div>
 
   <!-- Scripts -->
@@ -4796,7 +5142,38 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProposalDocument();
   initGlobalActions();
   initCatalogModal();
+  initMobileNavigation();
 });
+
+// Navegação Mobile (Alternar entre Editar e Visualizar Proposta)
+function initMobileNavigation() {
+  const btnEdit = document.getElementById('btn-mobile-edit');
+  const btnPreview = document.getElementById('btn-mobile-preview');
+  const btnPrintMobile = document.getElementById('btn-mobile-print-action');
+
+  if (btnEdit && btnPreview) {
+    btnEdit.addEventListener('click', () => {
+      btnEdit.classList.add('active');
+      btnPreview.classList.remove('active');
+      document.body.classList.remove('mobile-viewing-preview');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    btnPreview.addEventListener('click', () => {
+      btnPreview.classList.add('active');
+      btnEdit.classList.remove('active');
+      document.body.classList.add('mobile-viewing-preview');
+      renderProposalDocument();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  if (btnPrintMobile) {
+    btnPrintMobile.addEventListener('click', () => {
+      window.print();
+    });
+  }
+}
 
 // Navegação por Abas no Formulário
 function initTabs() {
