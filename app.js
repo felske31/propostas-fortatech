@@ -237,11 +237,20 @@ function renderProductsEditor() {
 
   container.innerHTML = state.catalog.map((prod, index) => {
     let thumbSrc = prod.image || '';
-    if (!thumbSrc && typeof EQUIPMENT_REAL_IMAGES !== 'undefined') {
-      if (prod.id === 'alinhadora_3d' || prod.id === 'alinhadora-3d-forta-tech-advanced') thumbSrc = EQUIPMENT_REAL_IMAGES.alinhadora3D?.local || EQUIPMENT_REAL_IMAGES.alinhadora3D?.cdn;
-      else if (prod.id === 'balanceadora_b102' || prod.id === 'balanceadora-de-rodas-forta-tech-b102-vermelha-1') thumbSrc = EQUIPMENT_REAL_IMAGES.balanceadoraB102?.local || EQUIPMENT_REAL_IMAGES.balanceadoraB102?.cdn;
-      else if (prod.id === 'desmontadora_grip500' || prod.id === 'desmontadora-de-pneus-forta-tech-grip-500-gp500-vermelha') thumbSrc = EQUIPMENT_REAL_IMAGES.desmontadoraGrip500?.local || EQUIPMENT_REAL_IMAGES.desmontadoraGrip500?.cdn;
-      else if (prod.id === 'limpeza_cnc605a' || prod.id === 'gdi-605-launch-equipamento-para-testes-e-limpeza-de-bico-injetor') thumbSrc = EQUIPMENT_REAL_IMAGES.maquinaBicosCNC605A?.local || EQUIPMENT_REAL_IMAGES.maquinaBicosCNC605A?.cdn;
+    let thumbCdn = '';
+    if (typeof EQUIPMENT_REAL_IMAGES !== 'undefined') {
+      for (const key of Object.keys(EQUIPMENT_REAL_IMAGES)) {
+        const entry = EQUIPMENT_REAL_IMAGES[key];
+        if (entry) {
+          if (!thumbSrc && (entry.id === prod.id || key.toLowerCase() === ('' + prod.id).replace(/[-_]/g, '').toLowerCase())) {
+            thumbSrc = entry.local || entry.cdn;
+          }
+          if (entry.local === thumbSrc && entry.cdn && entry.cdn !== thumbSrc) {
+            thumbCdn = entry.cdn;
+            break;
+          }
+        }
+      }
     }
 
     const isDrawerOpen = !!prod._isDrawerOpen;
@@ -256,7 +265,7 @@ function renderProductsEditor() {
             <input type="checkbox" class="prod-toggle" data-index="${index}" ${prod.selected ? 'checked' : ''}>
             <span class="slider"></span>
           </label>
-          ${thumbSrc ? `<img src="${thumbSrc}" alt="${prod.name}" style="width: 44px; height: 44px; object-fit: contain; background: #131722; border-radius: 6px; border: 1px solid #232838; padding: 2px; flex-shrink: 0;">` : ''}
+          ${thumbSrc ? `<img src="${thumbSrc}" ${thumbCdn ? `data-cdn="${thumbCdn}" onerror="if(this.dataset.cdn && this.src !== this.dataset.cdn){this.src=this.dataset.cdn;}"` : ''} alt="${prod.name}" style="width: 44px; height: 44px; object-fit: contain; background: #131722; border-radius: 6px; border: 1px solid #232838; padding: 2px; flex-shrink: 0;">` : ''}
           <div style="min-width: 0; flex: 1;">
             <div class="item-title-edit" title="${prod.name}">${prod.name}</div>
             <span class="item-tag">${prod.category}</span>
@@ -351,7 +360,7 @@ function renderProductsEditor() {
               </div>
               ${thumbSrc ? `
                 <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.35); padding: 6px 12px; border-radius: 6px; border: 1px solid #1f2536;">
-                  <img src="${thumbSrc}" alt="Prévia" style="width: 48px; height: 48px; object-fit: contain; background: #131722; border-radius: 4px; border: 1px solid #283046; padding: 2px;">
+                  <img src="${thumbSrc}" ${thumbCdn ? `data-cdn="${thumbCdn}" onerror="if(this.dataset.cdn && this.src !== this.dataset.cdn){this.src=this.dataset.cdn;}"` : ''} alt="Prévia" style="width: 48px; height: 48px; object-fit: contain; background: #131722; border-radius: 4px; border: 1px solid #283046; padding: 2px;">
                   <div style="font-size: 0.72rem; color: #22c55e; font-weight: 600;">✓ Imagem carregada e ativa na proposta</div>
                 </div>
               ` : ''}
@@ -695,13 +704,14 @@ function getProductIllustration(prod) {
 // Renderização do Logo Oficial Forta Tech
 function getFortaLogoSvg(extraStyle = '') {
   const logoSrc = (typeof OFFICIAL_LOGO !== 'undefined' && OFFICIAL_LOGO.local) ? OFFICIAL_LOGO.local : 'images/forta_logo_official.png';
+  const cdnLogo = (typeof OFFICIAL_LOGO !== 'undefined' && OFFICIAL_LOGO.cdn) ? OFFICIAL_LOGO.cdn : 'https://fortatech.com.br/cdn/shop/files/logo_forta_tech.png?v=1723114776&width=600';
   const fallbackB64 = (typeof OFFICIAL_LOGO !== 'undefined' && OFFICIAL_LOGO.base64) ? OFFICIAL_LOGO.base64 : '';
 
   return `
     <img src="${logoSrc}" 
          alt="Forta Tech" 
          class="forta-official-logo"
-         onerror="if (this.src !== '${fallbackB64}' && '${fallbackB64}') { this.src='${fallbackB64}'; }"
+         onerror="if (this.src !== '${cdnLogo}') { this.src='${cdnLogo}'; } else if (this.src !== '${fallbackB64}' && '${fallbackB64}') { this.src='${fallbackB64}'; }"
          style="max-width: 100%; height: 100%; object-fit: contain; object-position: left center; display: block; ${extraStyle}">
   `;
 }
