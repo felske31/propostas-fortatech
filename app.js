@@ -1125,68 +1125,68 @@ function renderProposalDocument() {
           </h2>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="terms-cards-container" style="display: flex; flex-direction: column; gap: 14px;">
           ${state.terms.payment ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 FORMAS DE PAGAMENTO
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.payment}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.shipping ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 FRETE
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.shipping}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.deliveryTime ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 PRAZO DE ENTREGA
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.deliveryTime}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.taxes ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 IMPOSTOS
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.taxes}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.warranty ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 GARANTIA
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.warranty}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.backupMachine ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 BENEFÍCIO MÁQUINA RESERVA (BACKUP)
               </div>
-              <div style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.backupMachine}
               </div>
             </div>
@@ -1218,34 +1218,34 @@ function renderProposalDocument() {
           </h2>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 18px;">
-          <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-            <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+        <div class="terms-cards-container" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+            <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
               ASSISTÊNCIA TÉCNICA
             </div>
-            <div style="font-size: 0.88rem; line-height: 1.6; color: #cbd5e1;">
+            <div style="font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
               ${state.terms.backupMachine ? `${state.terms.backupMachine}<br><br>` : ''}
               A Assistência técnica poderá ser realizada nas instalações da Forta em Santa Catarina, no escritório de São Paulo ou em parceiros/postos de assistência técnica designados. O cliente deverá consultar a Forta antes do envio do equipamento para confirmar a melhor base de apoio para a solução. As peças de reposição estão localizadas no estoque central de Santa Catarina. ${state.terms.techHourRate ? `Fora da garantia, o custo da hora técnica de manutenção é de R$ 135,00.` : ''}
             </div>
           </div>
 
           ${state.terms.technicalSupport ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 SUPORTE TÉCNICO
               </div>
-              <div style="font-size: 0.88rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.technicalSupport}
               </div>
             </div>
           ` : ''}
 
           ${state.terms.training ? `
-            <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 16px 20px; border-radius: 6px;">
-              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 6px;">
+            <div class="term-detail-card" style="background: rgba(255,255,255,0.03); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #FFFFFF; margin-bottom: 4px;">
                 TREINAMENTO
               </div>
-              <div style="font-size: 0.88rem; line-height: 1.6; color: #cbd5e1;">
+              <div style="font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.training}
               </div>
             </div>

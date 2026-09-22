@@ -1526,7 +1526,8 @@ input:checked + .slider:before {
   }
 
   html, body {
-    width: 210mm !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     height: auto !important;
     margin: 0 auto !important;
     padding: 0 !important;
@@ -1541,8 +1542,13 @@ input:checked + .slider:before {
   .preview-toolbar,
   .export-top-bar,
   .btn-toggle-drawer,
-  .item-details-drawer {
+  .item-details-drawer,
+  .price-cards-mobile {
     display: none !important;
+  }
+
+  .price-table-desktop {
+    display: block !important;
   }
 
   .app-container,
@@ -1550,10 +1556,9 @@ input:checked + .slider:before {
   .preview-viewport-scroll,
   .export-doc-container {
     display: block !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
+    width: 100% !important;
     max-width: 210mm !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     background: transparent !important;
     overflow: visible !important;
@@ -1562,29 +1567,28 @@ input:checked + .slider:before {
 
   #proposal-document {
     display: block !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
+    width: 100% !important;
     max-width: 210mm !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     gap: 0 !important;
     transform: none !important;
   }
 
-  /* PÁGINA A4 COM ALTURA E ENCAIXE MILIMÉTRICO */
+  /* PÁGINA A4 COM ALTURA CALIBRADA PARA IMPRESSÃO PERFEITA NO MOBILE SAFARI E DESKTOP */
   .doc-page {
-    width: 210mm !important;
-    min-width: 210mm !important;
+    width: 100% !important;
     max-width: 210mm !important;
-    height: 296mm !important;
-    min-height: 296mm !important;
-    max-height: 296mm !important;
+    height: 252mm !important;
+    min-height: 252mm !important;
+    max-height: 252mm !important;
     margin: 0 auto !important;
-    padding: 14mm 16mm 12mm 16mm !important;
+    padding: 8mm 14mm 6mm 14mm !important;
     box-sizing: border-box !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    -webkit-column-break-inside: avoid !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     page-break-after: always !important;
@@ -1606,25 +1610,48 @@ input:checked + .slider:before {
 
   /* CAPA */
   .page-cover {
-    padding: 24mm 20mm !important;
+    padding: 14mm 16mm 10mm 16mm !important;
+  }
+
+  .cover-top {
+    margin-bottom: 8px !important;
+  }
+
+  .cover-top > div {
+    width: 260px !important;
+    height: 50px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .cover-main-body {
+    margin: 14px 0 !important;
   }
 
   .cover-main-title {
-    font-size: 3.4rem !important;
+    font-size: 2.8rem !important;
     line-height: 1.05 !important;
   }
 
+  .cover-date-string {
+    font-size: 1.1rem !important;
+    margin-top: 6px !important;
+  }
+
+  .cover-client-card {
+    padding: 12px 16px !important;
+  }
+
   .cover-client-name {
-    font-size: 1.3rem !important;
+    font-size: 1.25rem !important;
   }
 
   /* PÁGINAS DE PRODUTO */
   .product-hero-header {
-    margin-bottom: 8px !important;
+    margin-bottom: 6px !important;
   }
 
   .product-main-name {
-    font-size: 1.65rem !important;
+    font-size: 1.45rem !important;
     line-height: 1.15 !important;
   }
 
@@ -1635,22 +1662,22 @@ input:checked + .slider:before {
 
   .product-badge-item,
   .product-badge-homolog {
-    font-size: 0.72rem !important;
-    padding: 3px 9px !important;
+    font-size: 0.7rem !important;
+    padding: 2.5px 8px !important;
   }
 
   .product-illustration-container {
-    height: 280px !important;
-    min-height: 280px !important;
-    max-height: 280px !important;
-    padding: 10px 18px !important;
-    margin-bottom: 12px !important;
+    height: 235px !important;
+    min-height: 235px !important;
+    max-height: 235px !important;
+    padding: 8px 14px !important;
+    margin-bottom: 8px !important;
     background: radial-gradient(circle at center, #1b2133 0%, #0a0c12 100%) !important;
   }
 
   .product-illustration-img {
-    max-height: 235px !important;
-    max-width: 96% !important;
+    max-height: 195px !important;
+    max-width: 95% !important;
     width: auto !important;
     object-fit: contain !important;
     display: block !important;
@@ -1658,90 +1685,100 @@ input:checked + .slider:before {
   }
 
   .product-illustration-badges {
-    margin-top: 8px !important;
+    margin-top: 6px !important;
     gap: 6px !important;
   }
 
   .product-illustration-badges span {
-    font-size: 0.68rem !important;
-    padding: 2px 8px !important;
+    font-size: 0.65rem !important;
+    padding: 2px 7px !important;
   }
 
   .product-intro-desc {
-    font-size: 0.85rem !important;
-    line-height: 1.4 !important;
-    margin-bottom: 12px !important;
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 8px !important;
+    padding: 6px 10px !important;
   }
 
   .product-intro-desc strong {
-    font-size: 0.95rem !important;
-    margin-bottom: 3px !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 2px !important;
   }
 
   .features-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 7px !important;
-    margin-bottom: 12px !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
   }
 
   .feature-pill {
-    padding: 6px 10px !important;
-    font-size: 0.76rem !important;
-    line-height: 1.3 !important;
-    gap: 7px !important;
+    padding: 5px 8px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.25 !important;
+    gap: 6px !important;
   }
 
   .feature-pill-icon {
-    width: 15px !important;
-    height: 15px !important;
-    font-size: 10px !important;
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 9px !important;
     flex-shrink: 0 !important;
   }
 
   .tech-spec-section {
-    padding: 10px 14px !important;
-    margin-bottom: 10px !important;
-  }
-
-  .tech-spec-title {
-    font-size: 0.78rem !important;
+    padding: 8px 12px !important;
     margin-bottom: 6px !important;
   }
 
+  .tech-spec-title {
+    font-size: 0.76rem !important;
+    margin-bottom: 4px !important;
+  }
+
   .tech-spec-grid {
-    gap: 4px 18px !important;
+    gap: 3px 16px !important;
   }
 
   .tech-spec-row {
-    padding: 2px 0 !important;
-    font-size: 0.74rem !important;
+    padding: 1.5px 0 !important;
+    font-size: 0.72rem !important;
   }
 
   /* PÁGINA DE PREÇOS / FINANCEIRO */
   .price-table th {
-    padding: 9px 12px !important;
-    font-size: 0.78rem !important;
+    padding: 8px 10px !important;
+    font-size: 0.76rem !important;
   }
 
   .price-table td {
-    padding: 9px 12px !important;
-    font-size: 0.82rem !important;
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
   }
 
   .total-investment-box {
-    padding: 14px 24px !important;
-    margin-top: 18px !important;
+    padding: 12px 20px !important;
+    margin-top: 14px !important;
   }
 
   .total-value-display {
-    font-size: 2.4rem !important;
+    font-size: 2.2rem !important;
+  }
+
+  /* PÁGINAS DE DETALHES, TERMOS E SUPORTE */
+  .terms-cards-container {
+    gap: 8px !important;
+  }
+
+  .term-detail-card {
+    padding: 10px 14px !important;
   }
 
   /* RODAPÉ */
   .doc-page-footer {
-    padding-top: 8px !important;
-    margin-top: 6px !important;
-    font-size: 0.72rem !important;
+    padding-top: 6px !important;
+    margin-top: 4px !important;
+    font-size: 0.7rem !important;
   }
 
   .theme-clean-light .doc-page {
