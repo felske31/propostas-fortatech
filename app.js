@@ -9,7 +9,7 @@ let state = {
   proposal: JSON.parse(JSON.stringify(DEFAULT_CONFIG.proposal)),
   terms: JSON.parse(JSON.stringify(DEFAULT_CONFIG.terms)),
   company: JSON.parse(JSON.stringify(DEFAULT_CONFIG.company)),
-  catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+  catalog: DEFAULT_CATALOG.filter(p => p.selected).map(p => JSON.parse(JSON.stringify(p))),
   services: JSON.parse(JSON.stringify(DEFAULT_SERVICES))
 };
 
@@ -235,6 +235,16 @@ function renderProductsEditor() {
   const container = document.getElementById('products-editor-list');
   if (!container) return;
 
+  if (!state.catalog || state.catalog.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 30px 15px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; color: #94a3b8;">
+        <div style="font-weight: 600; color: #f8fafc; margin-bottom: 6px;">Nenhum equipamento na proposta</div>
+        <div style="font-size: 0.8rem; margin-bottom: 12px;">Clique no botão "+ Adicionar do Catálogo Oficial" acima para escolher os produtos.</div>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = state.catalog.map((prod, index) => {
     let thumbSrc = prod.image || '';
     let thumbCdn = '';
@@ -382,6 +392,11 @@ function renderProductsEditor() {
     el.addEventListener('change', (e) => {
       const idx = e.target.getAttribute('data-index');
       state.catalog[idx].selected = e.target.checked;
+      const card = el.closest('.item-card-edit');
+      if (card) {
+        if (e.target.checked) card.classList.add('active');
+        else card.classList.remove('active');
+      }
       renderProposalDocument();
     });
   });
@@ -1330,7 +1345,7 @@ function initGlobalActions() {
       state.client = JSON.parse(JSON.stringify(DEFAULT_CONFIG.client));
       state.proposal = JSON.parse(JSON.stringify(DEFAULT_CONFIG.proposal));
       state.terms = JSON.parse(JSON.stringify(DEFAULT_CONFIG.terms));
-      state.catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+      state.catalog = DEFAULT_CATALOG.filter(p => p.selected).map(p => JSON.parse(JSON.stringify(p)));
       state.services = JSON.parse(JSON.stringify(DEFAULT_SERVICES));
       populateFormFields();
       renderProductsEditor();
@@ -1531,32 +1546,11 @@ function initCatalogModal() {
       state.catalog[existingIndex].selected = true;
       state.catalog[existingIndex].quantity = (state.catalog[existingIndex].quantity || 1) + 1;
     } else {
-      state.catalog.push({
-        id: masterItem.id,
-        name: masterItem.name,
-        category: masterItem.category,
-        tagline: "Tecnologia e Performance Oficial Forta Tech",
-        badge: "Garantia Forta Tech 12 Meses",
-        description: masterItem.description || masterItem.fullDescription || 'Equipamento de alta robustez desenvolvido para centros automotivos de alta performance.',
-        features: [
-          "Garantia oficial Forta Tech com suporte técnico especializado",
-          "Alta precisão e produtividade para a rotina da oficina",
-          "Componentes e engenharia de alta durabilidade"
-        ],
-        specs: [
-          { label: "Categoria", value: masterItem.category },
-          { label: "Garantia", value: "12 Meses de Fábrica" },
-          { label: "Suporte", value: "Treinamento e Suporte Dedicado" }
-        ],
-        defaultPrice: masterItem.defaultPrice || 0,
-        defaultDiscount: 0,
-        finalPrice: masterItem.defaultPrice || 0,
-        image: masterItem.image,
-        selected: true,
-        quantity: 1,
-        isCustom: true,
-        _isDrawerOpen: true
-      });
+      const cloned = JSON.parse(JSON.stringify(masterItem));
+      cloned.selected = true;
+      cloned.quantity = 1;
+      cloned._isDrawerOpen = false;
+      state.catalog.push(cloned);
     }
 
     // Feedback no botão

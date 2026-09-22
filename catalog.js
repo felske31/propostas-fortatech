@@ -441,7 +441,7 @@ const DEFAULT_CATALOG = [
     defaultDiscount: 3400.00,
     finalPrice: 16500.00,
     image: "images/balanceadora_b102.png",
-    selected: true,
+    selected: false,
     quantity: 1
   },
   {
@@ -528,7 +528,7 @@ const DEFAULT_CATALOG = [
     defaultDiscount: 4400.00,
     finalPrice: 22500.00,
     image: "images/desmontadora_grip_500.png",
-    selected: true,
+    selected: false,
     quantity: 1
   },
   {
@@ -808,7 +808,7 @@ const DEFAULT_CATALOG = [
     defaultDiscount: 3000.00,
     finalPrice: 9900.00,
     image: "images/maquina_cnc_605a.png",
-    selected: true,
+    selected: false,
     quantity: 1
   },
   {
