@@ -56,6 +56,10 @@ const EQUIPMENT_REAL_IMAGES = {
     local: "images/balanceadora_b102.png",
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202410241337018827balan-102_ff5bf4d7-cbcd-4e63-813f-68547540e38e.png?v=1787676431"
   },
+  balanceadoraB104: {
+    local: "images/balanceadora_b104.png",
+    cdn: "images/balanceadora_b104.png"
+  },
   balanceadoraSpin500: {
     local: "images/balanceadora_spin_500.png",
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202608261331486654spin_500_03.png?v=1787761925"

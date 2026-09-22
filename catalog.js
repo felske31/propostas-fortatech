@@ -468,7 +468,7 @@ const DEFAULT_CATALOG = [
     defaultPrice: 24900.00,
     defaultDiscount: 4000.00,
     finalPrice: 20900.00,
-    image: "images/balanceadora_b102.png",
+    image: "images/balanceadora_b104.png",
     selected: false,
     quantity: 1
   },
