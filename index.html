@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Propostas Comerciais | Forta Tech</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="logo-badge" style="display: flex; align-items: center; gap: 14px;">
+        <img src="images/forta_logo_official.png" alt="Forta Tech Logo" style="height: 38px; width: auto; object-fit: contain; display: block;">
+      </div>
+      <span class="app-tagline">Gerador de Propostas Comerciais 2.0</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-reset-template" title="Restaurar dados originais de demonstração">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        Restaurar Modelo
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-export-html" title="Baixar arquivo HTML avulso para envio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Exportar HTML
+      </button>
+
+      <button class="btn btn-primary btn-sm" id="btn-print-pdf" title="Gerar PDF ou Imprimir Proposta">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Imprimir / Salvar em PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Split-Screen Workspace -->
+  <div class="app-container">
+    
+    <!-- LEFT PANEL: Editor de Dados -->
+    <aside class="form-panel">
+      <nav class="form-tabs">
+        <button class="tab-btn active" data-tab="tab-client">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Cliente & Emissão
+        </button>
+        <button class="tab-btn" data-tab="tab-products">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          Equipamentos & Preços
+        </button>
+        <button class="tab-btn" data-tab="tab-terms">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          Condições & Termos
+        </button>
+        <button class="tab-btn" data-tab="tab-company">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Empresa Emissora
+        </button>
+      </nav>
+
+      <div class="form-content-scroll">
+        
+        <!-- ABA 1: CLIENTE E PROPOSTA -->
+        <div class="form-section active" id="tab-client">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Dados da Empresa Cliente
+          </div>
+
+          <div class="form-group">
+            <label>Razão Social / Nome da Empresa</label>
+            <input type="text" id="client-name" placeholder="Ex: EV COMÉRCIO DE VEÍCULOS LTDA.">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Unidade / Filial / Grupo</label>
+              <input type="text" id="client-branch" placeholder="Ex: (RAJA – BELO HORIZONTE/MG)">
+            </div>
+            <div class="form-group">
+              <label>CNPJ</label>
+              <input type="text" id="client-cnpj" placeholder="00.000.000/0000-00">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cidade / UF</label>
+              <input type="text" id="client-city" placeholder="Ex: Belo Horizonte / MG">
+            </div>
+            <div class="form-group">
+              <label>Pessoa de Contato</label>
+              <input type="text" id="client-contact" placeholder="Ex: Gerência de Oficina">
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Dados da Proposta Comercial
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Título Principal da Capa</label>
+              <input type="text" id="prop-main-title" placeholder="Ex: PROPOSTA COMERCIAL" value="PROPOSTA COMERCIAL">
+            </div>
+            <div class="form-group">
+              <label>Rótulo do Destinatário</label>
+              <input type="text" id="client-prefix" placeholder="Ex: Para:" value="Para:">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Número da Proposta</label>
+              <input type="text" id="prop-number" placeholder="PROP-2026/0842">
+            </div>
+            <div class="form-group">
+              <label>Data de Emissão</label>
+              <input type="date" id="prop-date">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Validade (Dias)</label>
+              <input type="number" id="prop-validity" min="1" value="7">
+            </div>
+            <div class="form-group">
+              <label>Nome da Campanha de Desconto</label>
+              <input type="text" id="prop-discount-campaign" placeholder="Ex: DESCONTO ESPECIAL">
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            Consultor / Contato Comercial
+          </div>
+
+          <div class="form-group">
+            <label>Nome do Consultor</label>
+            <input type="text" id="prop-seller-name" placeholder="Consultoria Comercial Forta Tech">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Telefone / WhatsApp</label>
+              <input type="text" id="prop-seller-phone" placeholder="+55 41 98508-1076">
+            </div>
+            <div class="form-group">
+              <label>E-mail Comercial</label>
+              <input type="email" id="prop-seller-email" placeholder="regional2.tech@grupoforta.com.br">
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: EQUIPAMENTOS E PREÇOS -->
+        <div class="form-section" id="tab-products">
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="section-title" style="margin-bottom: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                Equipamentos da Proposta
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" id="btn-open-catalog-modal" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 10px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                + Adicionar do Catálogo Oficial
+              </button>
+              <button class="btn btn-secondary" id="btn-add-custom-prod" style="flex: 1; font-size: 0.8rem; padding: 10px;" title="Adicionar equipamento personalizado fora do catálogo">
+                + Item Livre
+              </button>
+            </div>
+          </div>
+
+          <div id="products-editor-list">
+            <!-- Renderizado dinamicamente pelo app.js -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 12px;">
+            <div class="section-title" style="margin-bottom: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              Serviços & Frete
+            </div>
+            <button class="btn btn-secondary" id="btn-add-service" style="font-size: 0.75rem; padding: 6px 10px;" title="Adicionar um novo serviço ou taxa à proposta">
+              + Novo Serviço
+            </button>
+          </div>
+
+          <div id="services-editor-list">
+            <!-- Renderizado dinamicamente pelo app.js -->
+          </div>
+
+          <!-- OPÇÃO DE PARCELAMENTO NO VALOR TOTAL -->
+          <div class="section-title" style="margin-top: 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            Condição de Parcelamento no Valor
+          </div>
+
+          <div class="installment-config-box" style="background: #141824; border: 1px solid #232a3d; border-radius: 8px; padding: 14px 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.88rem; font-weight: 700; color: #fff;">Exibir Opção de Parcelamento na Proposta</span>
+              <label class="switch">
+                <input type="checkbox" id="toggle-installments">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div id="installment-fields-container" style="display: none; margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 12px;">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Número de Parcelas</label>
+                  <input type="number" id="prop-installment-count" min="2" max="120" placeholder="Ex: 12" value="12">
+                </div>
+                <div class="form-group">
+                  <label>Valor da Parcela (R$ - opcional)</label>
+                  <input type="number" step="0.01" id="prop-installment-val" placeholder="Automático se vazio">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Condição Adicional / Informação</label>
+                <input type="text" id="prop-installment-desc" placeholder="Ex: Sem juros direto de fábrica / Cartão BNDES">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Ou Texto Livre de Parcelamento Personalizado</label>
+                <input type="text" id="prop-installment-custom" placeholder="Ex: Entrada de R$ 20.000 + 24x de R$ 4.250,00">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 3: CONDIÇÕES E GARANTIA -->
+        <div class="form-section" id="tab-terms">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Condições Comerciais e Financeiras
+          </div>
+
+          <div class="form-group">
+            <label>Formas de Pagamento / Financiamento</label>
+            <textarea id="term-payment" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Frete e Transporte (FOB / CIF)</label>
+            <textarea id="term-shipping" rows="3" placeholder="Ex: O frete corre por conta do cliente. FOB Gaspar/SC..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Prazo de Entrega</label>
+            <textarea id="term-delivery" rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Garantia dos Equipamentos</label>
+            <textarea id="term-warranty" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Benefício Máquina Reserva (Backup)</label>
+            <textarea id="term-backup" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Regime Tributário e Impostos (ICMS)</label>
+            <textarea id="term-taxes" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Assistência e Suporte Técnico</label>
+            <textarea id="term-support" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Treinamento e Capacitação Operacional</label>
+            <textarea id="term-training" rows="3"></textarea>
+          </div>
+
+          <div class="section-title" style="margin-top: 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Opções de Exibição
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; color: #fff; font-size: 0.85rem;">
+              <input type="checkbox" id="toggle-specs" checked> Incluir Fichas Técnicas dos Equipamentos
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; color: #fff; font-size: 0.85rem;">
+              <input type="checkbox" id="toggle-terms" checked> Incluir Página de Garantia & Assistência
+            </label>
+          </div>
+        </div>
+
+        <!-- ABA 4: DADOS DA EMPRESA EMISSORA (FORTA TECH / EMPRESA) -->
+        <div class="form-section" id="tab-company">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Dados da Empresa Emissora
+          </div>
+
+          <div class="form-group">
+            <label>Nome / Razão Social da Empresa</label>
+            <input type="text" id="company-name" placeholder="Ex: FORTA TECH" value="FORTA TECH">
+          </div>
+
+          <div class="form-group">
+            <label>Slogan Institucional / Tagline</label>
+            <input type="text" id="company-slogan" placeholder="Ex: Inovação, Alta Precisão e Produtividade para a sua Oficina">
+          </div>
+
+          <div class="form-group">
+            <label>Endereço Completo</label>
+            <input type="text" id="company-address" placeholder="Ex: R. Baffin, 32 - Jardim do Mar">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cidade / UF / CEP</label>
+              <input type="text" id="company-city-state-zip" placeholder="Ex: São Bernardo do Campo - SP, 09750-620">
+            </div>
+            <div class="form-group">
+              <label>Telefone Oficial da Empresa</label>
+              <input type="text" id="company-phone" placeholder="Ex: +55 41 98508-1076">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>E-mail Institucional</label>
+              <input type="email" id="company-email" placeholder="Ex: regional2.tech@grupoforta.com.br">
+            </div>
+            <div class="form-group">
+              <label>Website Oficial</label>
+              <input type="text" id="company-website" placeholder="Ex: www.fortatech.com.br">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Live Preview & Document Viewport -->
+    <main class="preview-panel">
+      <div class="preview-toolbar">
+        <div class="preview-status">
+          <span class="status-dot"></span>
+          <span>Visualização em Tempo Real (Documento A4)</span>
+        </div>
+
+        <div class="preview-controls">
+          <div class="theme-switcher">
+            <button class="theme-opt-btn active" id="theme-dark-btn">Dark Tech (Oficial)</button>
+            <button class="theme-opt-btn" id="theme-light-btn">Clean White</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-viewport-scroll">
+        <div id="proposal-document">
+          <!-- Renderizado dinamicamente pelo app.js -->
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL DO CATÁLOGO MASTER DE EQUIPAMENTOS FORTA TECH -->
+  <div class="modal-overlay" id="catalog-modal" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-badge-tag">Site Oficial Forta Tech</div>
+          <h3 class="modal-title">Catálogo Completo de Equipamentos</h3>
+          <p class="modal-subtitle">Selecione os equipamentos para adicionar instantaneamente à proposta comercial com dados e fotos oficiais.</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-catalog-modal" title="Fechar">✕</button>
+      </div>
+
+      <!-- Barra de Filtros e Busca -->
+      <div class="modal-filter-bar">
+        <div class="modal-search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="catalog-search-input" placeholder="Pesquisar por nome, modelo (ex: PAD, Alinhadora, Balanceadora, CNC, Scanner...)...">
+        </div>
+        <div class="modal-category-pills" id="catalog-category-pills">
+          <!-- Pílulas geradas dinamicamente -->
+        </div>
+      </div>
+
+      <!-- Lista Rolante de Cards de Equipamentos -->
+      <div class="modal-catalog-grid" id="catalog-items-grid">
+        <!-- Renderizado dinamicamente pelo app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets.js"></script>
+  <script src="catalog.js"></script>
+  <script src="embedded_styles.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
