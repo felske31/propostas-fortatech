@@ -1582,21 +1582,21 @@ input:checked + .slider:before {
     width: 210mm !important;
     min-width: 210mm !important;
     max-width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
-    margin: 0 !important;
-    padding: 15mm 18mm 12mm 18mm !important;
+    height: 296mm !important;
+    min-height: 296mm !important;
+    max-height: 296mm !important;
+    margin: 0 auto !important;
+    padding: 14mm 16mm 12mm 16mm !important;
     box-sizing: border-box !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    page-break-before: always !important;
-    page-break-after: always !important;
-    break-before: page !important;
-    break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
     background-color: #08090d !important;
     overflow: hidden !important;
     position: relative !important;
@@ -1605,10 +1605,9 @@ input:checked + .slider:before {
     justify-content: space-between !important;
   }
 
-  .doc-page:first-child,
-  .page-cover {
-    page-break-before: auto !important;
-    break-before: auto !important;
+  .doc-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   /* CAPA */
@@ -1829,7 +1828,7 @@ input:checked + .slider:before {
 }
 
 /* Telas Médias / Tablets (max-width: 1100px) */
-@media (max-width: 1100px) {
+@media screen and (max-width: 1100px) {
   .app-container {
     flex-direction: column;
     height: auto;
@@ -1849,7 +1848,7 @@ input:checked + .slider:before {
 }
 
 /* Telas Mobile (Smartphones: max-width: 768px) */
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
   /* Evitar auto-zoom no iOS Safari */
   input, select, textarea {
     font-size: 16px !important;
@@ -4990,21 +4989,21 @@ body {
     width: 210mm !important;
     min-width: 210mm !important;
     max-width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
-    margin: 0 !important;
-    padding: 16mm 18mm !important;
+    height: 296mm !important;
+    min-height: 296mm !important;
+    max-height: 296mm !important;
+    margin: 0 auto !important;
+    padding: 14mm 16mm 12mm 16mm !important;
     box-sizing: border-box !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    page-break-before: always !important;
-    page-break-after: always !important;
-    break-before: page !important;
-    break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
     background-color: #08090d !important;
     overflow: hidden !important;
     position: relative !important;
@@ -5013,10 +5012,9 @@ body {
     justify-content: space-between !important;
   }
 
-  .doc-page:first-child,
-  .page-cover {
-    page-break-before: auto !important;
-    break-before: auto !important;
+  .doc-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   /* CAPA */

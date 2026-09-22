@@ -542,21 +542,21 @@ body {
     width: 210mm !important;
     min-width: 210mm !important;
     max-width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
-    margin: 0 !important;
-    padding: 16mm 18mm !important;
+    height: 296mm !important;
+    min-height: 296mm !important;
+    max-height: 296mm !important;
+    margin: 0 auto !important;
+    padding: 14mm 16mm 12mm 16mm !important;
     box-sizing: border-box !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    page-break-before: always !important;
-    page-break-after: always !important;
-    break-before: page !important;
-    break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
     background-color: #08090d !important;
     overflow: hidden !important;
     position: relative !important;
@@ -565,10 +565,9 @@ body {
     justify-content: space-between !important;
   }
 
-  .doc-page:first-child,
-  .page-cover {
-    page-break-before: auto !important;
-    break-before: auto !important;
+  .doc-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   /* CAPA */
