@@ -94,6 +94,8 @@ function initMobileNavigation() {
 
   if (btnPrintMobile) {
     btnPrintMobile.addEventListener('click', () => {
+      document.body.classList.remove('print-desktop-mode');
+      document.body.classList.add('print-mobile-mode');
       window.print();
     });
   }
@@ -1316,9 +1318,23 @@ function renderProposalDocument() {
 
 // Ações Globais: Impressão, Download Standalone, Templates, Novo Item
 function initGlobalActions() {
-  // Impressão / PDF
+  // Impressão / PDF Desktop
   document.getElementById('btn-print-pdf')?.addEventListener('click', () => {
+    document.body.classList.remove('print-mobile-mode');
+    document.body.classList.add('print-desktop-mode');
     window.print();
+  });
+
+  // Listener inteligente automático para atalhos de teclado (Ctrl+P / Cmd+P) e navegadores
+  window.addEventListener('beforeprint', () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    if (isMobile) {
+      document.body.classList.remove('print-desktop-mode');
+      document.body.classList.add('print-mobile-mode');
+    } else {
+      document.body.classList.remove('print-mobile-mode');
+      document.body.classList.add('print-desktop-mode');
+    }
   });
 
   // Alternador de Temas
@@ -1466,6 +1482,19 @@ function exportStandaloneHTML() {
   <div class="export-doc-container">
     ${proposalHtml}
   </div>
+
+  <script>
+    window.addEventListener('beforeprint', function() {
+      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+      if (isMobile) {
+        document.body.classList.remove('print-desktop-mode');
+        document.body.classList.add('print-mobile-mode');
+      } else {
+        document.body.classList.remove('print-mobile-mode');
+        document.body.classList.add('print-desktop-mode');
+      }
+    });
+  </script>
 </body>
 </html>`;
 

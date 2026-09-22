@@ -510,8 +510,7 @@ body {
   }
 
   html, body {
-    width: 100% !important;
-    max-width: 210mm !important;
+    width: 210mm !important;
     height: auto !important;
     margin: 0 auto !important;
     padding: 0 !important;
@@ -530,7 +529,8 @@ body {
 
   .export-doc-container {
     display: block !important;
-    width: 100% !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
     max-width: 210mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
@@ -541,7 +541,8 @@ body {
 
   #proposal-document {
     display: block !important;
-    width: 100% !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
     max-width: 210mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
@@ -549,8 +550,250 @@ body {
     transform: none !important;
   }
 
-  /* PÁGINA A4 COM ALTURA CALIBRADA PARA IMPRESSÃO PERFEITA NO MOBILE SAFARI E DESKTOP */
-  .doc-page {
+  /* ==========================================================================
+     MODO PADRÃO / DESKTOP: FULL-BLEED A4 210mm x 297mm (EXECUTIVO & IMPONENTE)
+     ========================================================================== */
+  body.print-desktop-mode .doc-page,
+  body:not(.print-mobile-mode) .doc-page {
+    width: 210mm !important;
+    min-width: 210mm !important;
+    max-width: 210mm !important;
+    height: 296mm !important;
+    min-height: 296mm !important;
+    max-height: 296mm !important;
+    margin: 0 auto !important;
+    padding: 14mm 16mm 12mm 16mm !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
+    background-color: #08090d !important;
+    overflow: hidden !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  body.print-desktop-mode .doc-page:last-child,
+  body:not(.print-mobile-mode) .doc-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* CAPA DESKTOP */
+  body.print-desktop-mode .page-cover,
+  body:not(.print-mobile-mode) .page-cover {
+    padding: 24mm 20mm !important;
+  }
+
+  body.print-desktop-mode .cover-top > div,
+  body:not(.print-mobile-mode) .cover-top > div {
+    width: 340px !important;
+    height: 65px !important;
+    margin-bottom: 25px !important;
+  }
+
+  body.print-desktop-mode .cover-main-body,
+  body:not(.print-mobile-mode) .cover-main-body {
+    margin: 30px 0 !important;
+  }
+
+  body.print-desktop-mode .cover-main-title,
+  body:not(.print-mobile-mode) .cover-main-title {
+    font-size: 3.4rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.print-desktop-mode .cover-date-string,
+  body:not(.print-mobile-mode) .cover-date-string {
+    font-size: 1.3rem !important;
+    margin-top: 8px !important;
+  }
+
+  body.print-desktop-mode .cover-client-card,
+  body:not(.print-mobile-mode) .cover-client-card {
+    padding: 16px 22px !important;
+  }
+
+  body.print-desktop-mode .cover-client-name,
+  body:not(.print-mobile-mode) .cover-client-name {
+    font-size: 1.4rem !important;
+  }
+
+  /* PRODUTOS DESKTOP */
+  body.print-desktop-mode .product-hero-header,
+  body:not(.print-mobile-mode) .product-hero-header {
+    margin-bottom: 8px !important;
+  }
+
+  body.print-desktop-mode .product-main-name,
+  body:not(.print-mobile-mode) .product-main-name {
+    font-size: 1.65rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.print-desktop-mode .product-badges-row,
+  body:not(.print-mobile-mode) .product-badges-row {
+    margin-top: 4px !important;
+    gap: 6px !important;
+  }
+
+  body.print-desktop-mode .product-badge-item,
+  body:not(.print-mobile-mode) .product-badge-item,
+  body.print-desktop-mode .product-badge-homolog,
+  body:not(.print-mobile-mode) .product-badge-homolog {
+    font-size: 0.72rem !important;
+    padding: 3px 9px !important;
+  }
+
+  body.print-desktop-mode .product-illustration-container,
+  body:not(.print-mobile-mode) .product-illustration-container {
+    height: 275px !important;
+    min-height: 275px !important;
+    max-height: 275px !important;
+    padding: 10px 18px !important;
+    margin-bottom: 12px !important;
+    background: radial-gradient(circle at center, #1b2133 0%, #0a0c12 100%) !important;
+  }
+
+  body.print-desktop-mode .product-illustration-img,
+  body:not(.print-mobile-mode) .product-illustration-img {
+    max-height: 230px !important;
+    max-width: 96% !important;
+    width: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  body.print-desktop-mode .product-illustration-badges,
+  body:not(.print-mobile-mode) .product-illustration-badges {
+    margin-top: 8px !important;
+    gap: 6px !important;
+  }
+
+  body.print-desktop-mode .product-illustration-badges span,
+  body:not(.print-mobile-mode) .product-illustration-badges span {
+    font-size: 0.68rem !important;
+    padding: 2px 8px !important;
+  }
+
+  body.print-desktop-mode .product-intro-desc,
+  body:not(.print-mobile-mode) .product-intro-desc {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+    padding: 8px 12px !important;
+  }
+
+  body.print-desktop-mode .product-intro-desc strong,
+  body:not(.print-mobile-mode) .product-intro-desc strong {
+    font-size: 0.95rem !important;
+    margin-bottom: 3px !important;
+  }
+
+  body.print-desktop-mode .features-grid,
+  body:not(.print-mobile-mode) .features-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+    margin-bottom: 12px !important;
+  }
+
+  body.print-desktop-mode .feature-pill,
+  body:not(.print-mobile-mode) .feature-pill {
+    padding: 6px 10px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.3 !important;
+    gap: 7px !important;
+  }
+
+  body.print-desktop-mode .feature-pill-icon,
+  body:not(.print-mobile-mode) .feature-pill-icon {
+    width: 15px !important;
+    height: 15px !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body.print-desktop-mode .tech-spec-section,
+  body:not(.print-mobile-mode) .tech-spec-section {
+    padding: 10px 14px !important;
+    margin-bottom: 10px !important;
+  }
+
+  body.print-desktop-mode .tech-spec-title,
+  body:not(.print-mobile-mode) .tech-spec-title {
+    font-size: 0.78rem !important;
+    margin-bottom: 6px !important;
+  }
+
+  body.print-desktop-mode .tech-spec-grid,
+  body:not(.print-mobile-mode) .tech-spec-grid {
+    gap: 4px 18px !important;
+  }
+
+  body.print-desktop-mode .tech-spec-row,
+  body:not(.print-mobile-mode) .tech-spec-row {
+    padding: 2px 0 !important;
+    font-size: 0.74rem !important;
+  }
+
+  body.print-desktop-mode .price-table th,
+  body:not(.print-mobile-mode) .price-table th {
+    padding: 10px 14px !important;
+    font-size: 0.82rem !important;
+  }
+
+  body.print-desktop-mode .price-table td,
+  body:not(.print-mobile-mode) .price-table td {
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
+  }
+
+  body.print-desktop-mode .total-investment-box,
+  body:not(.print-mobile-mode) .total-investment-box {
+    padding: 16px 26px !important;
+    margin-top: 18px !important;
+  }
+
+  body.print-desktop-mode .total-value-display,
+  body:not(.print-mobile-mode) .total-value-display {
+    font-size: 2.5rem !important;
+  }
+
+  body.print-desktop-mode .terms-cards-container,
+  body:not(.print-mobile-mode) .terms-cards-container {
+    gap: 12px !important;
+  }
+
+  body.print-desktop-mode .term-detail-card,
+  body:not(.print-mobile-mode) .term-detail-card {
+    padding: 12px 18px !important;
+  }
+
+  body.print-desktop-mode .back-cover,
+  body:not(.print-mobile-mode) .back-cover {
+    padding: 24mm 20mm !important;
+  }
+
+  body.print-desktop-mode .doc-page-footer,
+  body:not(.print-mobile-mode) .doc-page-footer {
+    padding-top: 8px !important;
+    margin-top: 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* ==========================================================================
+     MODO MOBILE: CALIBRADO PARA AIRPRINT IOS SAFARI (ZERO PÁGINAS PRETAS)
+     ========================================================================== */
+  body.print-mobile-mode .doc-page {
     width: 100% !important;
     max-width: 210mm !important;
     height: 252mm !important;
@@ -577,70 +820,64 @@ body {
     justify-content: space-between !important;
   }
 
-  .doc-page:last-child {
+  body.print-mobile-mode .doc-page:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
   }
 
-  /* CAPA */
-  .page-cover {
+  body.print-mobile-mode .page-cover {
     padding: 14mm 16mm 10mm 16mm !important;
   }
 
-  .cover-top {
-    margin-bottom: 8px !important;
-  }
-
-  .cover-top > div {
+  body.print-mobile-mode .cover-top > div {
     width: 260px !important;
     height: 50px !important;
     margin-bottom: 12px !important;
   }
 
-  .cover-main-body {
+  body.print-mobile-mode .cover-main-body {
     margin: 14px 0 !important;
   }
 
-  .cover-main-title {
+  body.print-mobile-mode .cover-main-title {
     font-size: 2.8rem !important;
     line-height: 1.05 !important;
   }
 
-  .cover-date-string {
+  body.print-mobile-mode .cover-date-string {
     font-size: 1.1rem !important;
     margin-top: 6px !important;
   }
 
-  .cover-client-card {
+  body.print-mobile-mode .cover-client-card {
     padding: 12px 16px !important;
   }
 
-  .cover-client-name {
+  body.print-mobile-mode .cover-client-name {
     font-size: 1.25rem !important;
   }
 
-  /* PÁGINAS DE PRODUTO */
-  .product-hero-header {
+  body.print-mobile-mode .product-hero-header {
     margin-bottom: 6px !important;
   }
 
-  .product-main-name {
+  body.print-mobile-mode .product-main-name {
     font-size: 1.45rem !important;
     line-height: 1.15 !important;
   }
 
-  .product-badges-row {
+  body.print-mobile-mode .product-badges-row {
     margin-top: 4px !important;
     gap: 6px !important;
   }
 
-  .product-badge-item,
-  .product-badge-homolog {
+  body.print-mobile-mode .product-badge-item,
+  body.print-mobile-mode .product-badge-homolog {
     font-size: 0.7rem !important;
     padding: 2.5px 8px !important;
   }
 
-  .product-illustration-container {
+  body.print-mobile-mode .product-illustration-container {
     height: 235px !important;
     min-height: 235px !important;
     max-height: 235px !important;
@@ -649,7 +886,7 @@ body {
     background: radial-gradient(circle at center, #1b2133 0%, #0a0c12 100%) !important;
   }
 
-  .product-illustration-img {
+  body.print-mobile-mode .product-illustration-img {
     max-height: 195px !important;
     max-width: 95% !important;
     width: auto !important;
@@ -658,98 +895,95 @@ body {
     visibility: visible !important;
   }
 
-  .product-illustration-badges {
+  body.print-mobile-mode .product-illustration-badges {
     margin-top: 6px !important;
     gap: 6px !important;
   }
 
-  .product-illustration-badges span {
+  body.print-mobile-mode .product-illustration-badges span {
     font-size: 0.65rem !important;
     padding: 2px 7px !important;
   }
 
-  .product-intro-desc {
+  body.print-mobile-mode .product-intro-desc {
     font-size: 0.8rem !important;
     line-height: 1.35 !important;
     margin-bottom: 8px !important;
     padding: 6px 10px !important;
   }
 
-  .product-intro-desc strong {
+  body.print-mobile-mode .product-intro-desc strong {
     font-size: 0.9rem !important;
     margin-bottom: 2px !important;
   }
 
-  .features-grid {
+  body.print-mobile-mode .features-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 6px !important;
     margin-bottom: 8px !important;
   }
 
-  .feature-pill {
+  body.print-mobile-mode .feature-pill {
     padding: 5px 8px !important;
     font-size: 0.72rem !important;
     line-height: 1.25 !important;
     gap: 6px !important;
   }
 
-  .feature-pill-icon {
+  body.print-mobile-mode .feature-pill-icon {
     width: 14px !important;
     height: 14px !important;
     font-size: 9px !important;
     flex-shrink: 0 !important;
   }
 
-  .tech-spec-section {
+  body.print-mobile-mode .tech-spec-section {
     padding: 8px 12px !important;
     margin-bottom: 6px !important;
   }
 
-  .tech-spec-title {
+  body.print-mobile-mode .tech-spec-title {
     font-size: 0.76rem !important;
     margin-bottom: 4px !important;
   }
 
-  .tech-spec-grid {
+  body.print-mobile-mode .tech-spec-grid {
     gap: 3px 16px !important;
   }
 
-  .tech-spec-row {
+  body.print-mobile-mode .tech-spec-row {
     padding: 1.5px 0 !important;
     font-size: 0.72rem !important;
   }
 
-  /* PÁGINA DE PREÇOS / FINANCEIRO */
-  .price-table th {
+  body.print-mobile-mode .price-table th {
     padding: 8px 10px !important;
     font-size: 0.76rem !important;
   }
 
-  .price-table td {
+  body.print-mobile-mode .price-table td {
     padding: 8px 10px !important;
     font-size: 0.78rem !important;
   }
 
-  .total-investment-box {
+  body.print-mobile-mode .total-investment-box {
     padding: 12px 20px !important;
     margin-top: 14px !important;
   }
 
-  .total-value-display {
+  body.print-mobile-mode .total-value-display {
     font-size: 2.2rem !important;
   }
 
-  /* PÁGINAS DE DETALHES, TERMOS E SUPORTE */
-  .terms-cards-container {
+  body.print-mobile-mode .terms-cards-container {
     gap: 8px !important;
   }
 
-  .term-detail-card {
+  body.print-mobile-mode .term-detail-card {
     padding: 10px 14px !important;
   }
 
-  /* RODAPÉ */
-  .doc-page-footer {
+  body.print-mobile-mode .doc-page-footer {
     padding-top: 6px !important;
     margin-top: 4px !important;
     font-size: 0.7rem !important;
