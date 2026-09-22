@@ -1122,6 +1122,14 @@ input:checked + .slider:before {
    PAGE: QUADRO FINANCEIRO & INVESTIMENTO
    ========================================================================== */
 
+.price-cards-mobile {
+  display: none;
+}
+
+.price-table-desktop {
+  display: block;
+}
+
 .price-table-wrap {
   margin-bottom: 25px;
   overflow: hidden;
@@ -2136,21 +2144,180 @@ input:checked + .slider:before {
     gap: 12px !important;
   }
 
-  .price-table {
-    display: block !important;
-    width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+  /* Alternância para Cards de Alta Legibilidade no Celular */
+  .price-table-desktop {
+    display: none !important;
   }
 
-  .price-table th, .price-table td {
-    padding: 8px 10px !important;
+  .price-cards-mobile {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .price-mobile-card {
+    background: #11141f !important;
+    border: 1.5px solid rgba(229, 9, 20, 0.45) !important;
+    border-radius: 12px !important;
+    padding: 16px 14px !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+    position: relative !important;
+  }
+
+  .pmc-top {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .pmc-badge {
+    background: #E50914 !important;
+    color: #ffffff !important;
+    font-size: 0.8rem !important;
+    font-weight: 900 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+  }
+
+  .pmc-title {
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    line-height: 1.35 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .pmc-desc {
     font-size: 0.78rem !important;
-    white-space: nowrap;
+    color: #94a3b8 !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+    padding-left: 2px !important;
   }
 
-  .total-highlight-value {
-    font-size: 1.8rem !important;
+  .pmc-breakdown {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 8px !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .pmc-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 0.82rem !important;
+  }
+
+  .pmc-row-lbl {
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+  }
+
+  .pmc-row-val {
+    color: #cbd5e1 !important;
+    font-weight: 700 !important;
+  }
+
+  .pmc-row.disc-row .pmc-row-lbl {
+    color: #22c55e !important;
+    font-weight: 700 !important;
+  }
+
+  .pmc-row.disc-row .pmc-row-val {
+    color: #22c55e !important;
+    font-weight: 800 !important;
+  }
+
+  .pmc-row.total-row {
+    border-top: 1px dashed rgba(255, 255, 255, 0.15) !important;
+    padding-top: 8px !important;
+    margin-top: 2px !important;
+  }
+
+  .pmc-row.total-row .pmc-row-lbl {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.82rem !important;
+  }
+
+  .pmc-row.total-row .pmc-row-val {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 1.05rem !important;
+  }
+
+  /* Caixa Total de Investimento no Mobile */
+  .total-investment-box-wrap {
+    justify-content: stretch !important;
+    margin-top: 16px !important;
+    width: 100% !important;
+  }
+
+  .total-investment-box {
+    width: 100% !important;
+    padding: 16px 14px !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+
+  .total-label-display {
+    font-size: 0.95rem !important;
+    margin-bottom: 2px !important;
+    text-align: center !important;
+  }
+
+  .total-value-display {
+    font-size: 2.1rem !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.5px !important;
+    text-align: center !important;
+  }
+
+  .economy-badge-wrap {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .economy-badge-pill {
+    font-size: 0.76rem !important;
+    padding: 6px 12px !important;
+    white-space: normal !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .installment-display-box {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    margin-top: 12px !important;
+    padding: 10px 14px !important;
+  }
+
+  .installment-header {
+    justify-content: center !important;
+  }
+
+  .installment-custom-text,
+  .installment-val-text {
+    text-align: center !important;
+  }
+
+  .installment-desc-text {
+    text-align: center !important;
   }
 }
 

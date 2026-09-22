@@ -426,6 +426,14 @@ body {
   text-align: right;
 }
 
+.price-cards-mobile {
+  display: none !important;
+}
+
+.price-table-desktop {
+  display: block !important;
+}
+
 .price-table-wrap {
   border: 2px solid #E50914;
   border-radius: 8px;

@@ -962,39 +962,78 @@ function renderProposalDocument() {
           </div>
         </div>
 
-        <div class="price-table-wrap" style="border: 2px solid #E50914; border-radius: 8px; overflow: hidden;">
-          <table class="price-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: #E50914; color: #FFFFFF;">
-                <th style="padding: 14px 12px; text-align: center; font-weight: 800; font-size: 0.85rem; width: 60px;">QUANT</th>
-                <th style="padding: 14px 16px; text-align: left; font-weight: 800; font-size: 0.85rem;">PRODUTO / SERVIÇO</th>
-                <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">VALOR UNITÁRIO</th>
-                <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">${(state.proposal.discountCampaignName || 'DESCONTO ESPECIAL').toUpperCase()}</th>
-                <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">VALOR TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pageItems.map((item, idx) => {
-                const qty = item.qty || 1;
-                const unitOrig = item.price;
-                const unitDisc = item.discount || 0;
-                const totalItem = (unitOrig - unitDisc) * (item.isService ? 1 : qty);
+        <!-- Versão Desktop e Impressão (Tabela Formal Grid A4) -->
+        <div class="price-table-desktop">
+          <div class="price-table-wrap" style="border: 2px solid #E50914; border-radius: 8px; overflow: hidden;">
+            <table class="price-table" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #E50914; color: #FFFFFF;">
+                  <th style="padding: 14px 12px; text-align: center; font-weight: 800; font-size: 0.85rem; width: 60px;">QUANT</th>
+                  <th style="padding: 14px 16px; text-align: left; font-weight: 800; font-size: 0.85rem;">PRODUTO / SERVIÇO</th>
+                  <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">VALOR UNITÁRIO</th>
+                  <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">${(state.proposal.discountCampaignName || 'DESCONTO ESPECIAL').toUpperCase()}</th>
+                  <th style="padding: 14px 16px; text-align: right; font-weight: 800; font-size: 0.85rem;">VALOR TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pageItems.map((item, idx) => {
+                  const qty = item.qty || 1;
+                  const unitOrig = item.price;
+                  const unitDisc = item.discount || 0;
+                  const totalItem = (unitOrig - unitDisc) * (item.isService ? 1 : qty);
 
-                return `
-                  <tr style="background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'}; border-bottom: 1px solid #232838;">
-                    <td style="padding: 14px 12px; text-align: center; font-weight: 800; color: #E50914;">${qty}</td>
-                    <td style="padding: 14px 16px;">
-                      <div style="font-weight: 800; color: #FFFFFF; font-size: 0.95rem;">${item.name.toUpperCase()}</div>
-                      ${item.description ? `<div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">${item.description}</div>` : ''}
-                    </td>
-                    <td style="padding: 14px 16px; text-align: right; color: #cbd5e1; font-weight: 600;">${formatBRL(unitOrig)}</td>
-                    <td style="padding: 14px 16px; text-align: right; color: #22c55e; font-weight: 800;">${unitDisc > 0 ? formatBRL(unitDisc * (item.isService ? 1 : qty)) : '—'}</td>
-                    <td style="padding: 14px 16px; text-align: right; font-weight: 900; color: #FFFFFF; font-size: 1.05rem;">${formatBRL(totalItem)}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
+                  return `
+                    <tr style="background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'}; border-bottom: 1px solid #232838;">
+                      <td style="padding: 14px 12px; text-align: center; font-weight: 800; color: #E50914;">${qty}</td>
+                      <td style="padding: 14px 16px;">
+                        <div style="font-weight: 800; color: #FFFFFF; font-size: 0.95rem;">${item.name.toUpperCase()}</div>
+                        ${item.description ? `<div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">${item.description}</div>` : ''}
+                      </td>
+                      <td style="padding: 14px 16px; text-align: right; color: #cbd5e1; font-weight: 600;">${formatBRL(unitOrig)}</td>
+                      <td style="padding: 14px 16px; text-align: right; color: #22c55e; font-weight: 800;">${unitDisc > 0 ? formatBRL(unitDisc * (item.isService ? 1 : qty)) : '—'}</td>
+                      <td style="padding: 14px 16px; text-align: right; font-weight: 900; color: #FFFFFF; font-size: 1.05rem;">${formatBRL(totalItem)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Versão Mobile (Cards Executivos 100% Responsivos e Legíveis no Celular) -->
+        <div class="price-cards-mobile">
+          ${pageItems.map((item, idx) => {
+            const qty = item.qty || 1;
+            const unitOrig = item.price;
+            const unitDisc = item.discount || 0;
+            const totalItem = (unitOrig - unitDisc) * (item.isService ? 1 : qty);
+
+            return `
+              <div class="price-mobile-card">
+                <div class="pmc-top">
+                  <span class="pmc-badge">${qty}x</span>
+                  <div class="pmc-name">${item.name.toUpperCase()}</div>
+                </div>
+                ${item.description ? `<div class="pmc-desc">${item.description}</div>` : ''}
+                <div class="pmc-breakdown">
+                  <div class="pmc-row">
+                    <span class="pmc-row-lbl">VALOR TABELA / UNIT.</span>
+                    <span class="pmc-row-val orig">${formatBRL(unitOrig)}</span>
+                  </div>
+                  ${unitDisc > 0 ? `
+                    <div class="pmc-row disc-row">
+                      <span class="pmc-row-lbl">${(state.proposal.discountCampaignName || 'DESCONTO ESPECIAL').toUpperCase()}</span>
+                      <span class="pmc-row-val disc">- ${formatBRL(unitDisc * (item.isService ? 1 : qty))}</span>
+                    </div>
+                  ` : ''}
+                  <div class="pmc-row total-row">
+                    <span class="pmc-row-lbl">VALOR FINAL LÍQUIDO</span>
+                    <span class="pmc-row-val total">${formatBRL(totalItem)}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
 
         ${!isLastPage ? `
@@ -1003,14 +1042,14 @@ function renderProposalDocument() {
           </div>
         ` : `
           <!-- Caixa de Total da Proposta (Layout Executivo e Refinado) -->
-          <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+          <div class="total-investment-box-wrap" style="display: flex; justify-content: flex-end; margin-top: 24px;">
             <div class="total-investment-box" style="text-align: right; background: #131722; border: 2px solid #E50914; padding: 20px 32px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(229,9,20,0.2);">
-              <div style="font-size: 1.1rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Total da proposta:</div>
+              <div class="total-label-display" style="font-size: 1.1rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Total da proposta:</div>
               <div class="total-value-display" style="font-family: var(--font-display); font-size: 2.7rem; font-weight: 900; color: #ffffff; letter-spacing: -0.5px;">
                 ${formatBRL(totals.finalTotal)}
               </div>
               ${totals.totalDiscounts > 0 ? `
-                <div style="margin-top: 6px;">
+                <div class="economy-badge-wrap" style="margin-top: 6px;">
                   <span class="economy-badge-pill" style="font-size: 0.82rem; color: #22c55e; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 12px; border-radius: 20px;">
                     <span>✓</span> Economia Total Concedida: ${formatBRL(totals.totalDiscounts)}
                   </span>
@@ -1021,11 +1060,11 @@ function renderProposalDocument() {
                 if (state.proposal.installmentCustomText && state.proposal.installmentCustomText.trim().length > 0) {
                   return `
                     <div class="installment-display-box" style="margin-top: 10px; background: rgba(229, 9, 20, 0.12); border: 1px solid rgba(229, 9, 20, 0.4); border-radius: 8px; padding: 8px 14px; text-align: right; display: inline-block;">
-                      <div style="font-size: 0.75rem; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                      <div class="installment-header" style="font-size: 0.75rem; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                         Opção de Parcelamento:
                       </div>
-                      <div style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-top: 2px;">
+                      <div class="installment-custom-text" style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-top: 2px;">
                         ${state.proposal.installmentCustomText}
                       </div>
                     </div>
@@ -1040,14 +1079,14 @@ function renderProposalDocument() {
 
                 return `
                   <div class="installment-display-box" style="margin-top: 10px; background: rgba(229, 9, 20, 0.12); border: 1px solid rgba(229, 9, 20, 0.4); border-radius: 8px; padding: 8px 16px; text-align: right; display: inline-block;">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                    <div class="installment-header" style="font-size: 0.75rem; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                       Opção de Parcelamento:
                     </div>
-                    <div style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 3px;">
+                    <div class="installment-val-text" style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 3px;">
                       ${count}x de <span style="color: #ff4d58;">${formatBRL(installmentVal)}</span>
                     </div>
-                    ${desc ? `<div style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600; margin-top: 2px;">(${desc})</div>` : ''}
+                    ${desc ? `<div class="installment-desc-text" style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600; margin-top: 2px;">(${desc})</div>` : ''}
                   </div>
                 `;
               })() : ''}
