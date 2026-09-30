@@ -1119,6 +1119,213 @@ const DEFAULT_CATALOG = [
     image: "images/manta_corta_fogo_bridgehill_car_standard.png",
     selected: false,
     quantity: 1
+  },
+
+  // --------------------------------------------------------------------------
+  // 12. OSCILOSCÓPIOS & DIAGNÓSTICO AVANÇADO
+  // --------------------------------------------------------------------------
+  {
+    id: "osciloscopio-launch-o2-2",
+    name: "Osciloscópio Digital Automotivo Launch O2-2 (4 Canais)",
+    category: "Scanners & DTEA",
+    categoryKey: "scanners",
+    tagline: "Análise Avançada de Sinais de Alta Velocidade para Scanners Linha X-431",
+    badge: "100 MHz • 4 Canais Digitais",
+    description: "O LAUNCH O2-2 Scopebox é um osciloscópio automotivo digital de 4 canais de alta velocidade, desenvolvido para diagnóstico aprofundado de falhas elétricas e eletrônicas veiculares. Integrado com perfeição aos scanners da linha LAUNCH X-431 (PRO 1S V5.0, PRO SE, PRO 3 LINK, PAD VII e PAD IX), transforma o tablet de diagnóstico em um laboratório automotivo para análise de sensores, atuadores, ignição e redes de comunicação CAN/LIN.",
+    features: [
+      "4 Canais Independentes: Permite monitorar e comparar múltiplos sinais simultaneamente (ex: sincronismo CKP e CMP)",
+      "Largura de Banda de 100 MHz e Amostragem de 1 GSa/s: Captura falhas transientes e microinterrupções em alta velocidade",
+      "Testes Guiados Automotivos Pré-Configurados: Biblioteca integrada com padrões de onda de referência para centenas de componentes",
+      "Decodificação de Redes CAN / LIN: Diagnóstico aprofundado do tráfego de dados veicular direto na tela do scanner",
+      "Gravação e Reprodução de Formas de Onda: Armazene gráficos para emissão de laudos técnicos e comprovação ao cliente",
+      "Gabinete Emborrachado Reforçado: Proteção anti-impacto industrial desenvolvida para o dia a dia pesado da oficina"
+    ],
+    specs: [
+      { label: "Canais", value: "4 Canais analógicos independentes" },
+      { label: "Largura de Banda", value: "100 MHz" },
+      { label: "Taxa de Amostragem", value: "Até 1 GSa/s" },
+      { label: "Conectividade", value: "USB plug-and-play de alta velocidade" },
+      { label: "Compatibilidade", value: "Scanners Launch X-431 PRO 1S V5.0, PRO SE, PRO 3 LINK, PAD VII, PAD IX" },
+      { label: "Aplicações", value: "Sensores, atuadores, ignição primária/secundária, redes CAN, LIN, FlexRay" },
+      { label: "Garantia", value: "12 Meses de Fábrica" }
+    ],
+    defaultPrice: 8379.00,
+    defaultDiscount: 3479.00,
+    finalPrice: 4900.00,
+    image: "images/osciloscopio_launch_o2_2.png",
+    selected: false,
+    quantity: 1
+  },
+  {
+    id: "osciloscopio-multimetro-launch-em101n",
+    name: "Osciloscópio 2 Canais com Multímetro Digital Launch EM101N",
+    category: "Scanners & DTEA",
+    categoryKey: "scanners",
+    tagline: "Solução 2 em 1 Portátil com Conexão Sem Fio para Diagnóstico Geral e VHE",
+    badge: "Osciloscópio + Multímetro Sem Fio",
+    description: "O LAUNCH EM101N combina as funções de um multímetro digital True RMS de alta precisão e um osciloscópio automotivo de 2 canais em um único equipamento compacto e robusto. Essencial para a detecção e manutenção em veículos a combustão, híbridos e elétricos (VHE), possui comunicação sem fio Bluetooth de alta velocidade e aplicativo intuitivo compatível com scanners Launch e tablets.",
+    features: [
+      "Equipamento 2 em 1: Multímetro True-RMS e osciloscópio de 2 canais integrados para diagnósticos rápidos",
+      "Comunicação Sem Fio Wireless / Bluetooth: Liberdade de movimento na oficina sem emaranhado de fios no cofre do motor",
+      "Especial para Veículos Híbridos e Elétricos (VHE): Medições seguras em sistemas de baixa e alta precisão",
+      "Geração e Visualização Rápida de Formas de Onda: Análise visual instantânea de sensores, pulsos de injeção e atuadores",
+      "Interface Intuitiva: Software com configuração rápida de escala de tempo, tensão e trigger automático",
+      "Design Portátil e Ergonômico: Gabinete resistente com alça de apoio para encaixe no compartimento do motor"
+    ],
+    specs: [
+      { label: "Função Principal", value: "Osciloscópio de 2 Canais + Multímetro Digital True RMS" },
+      { label: "Canais", value: "2 Canais de entrada analógica" },
+      { label: "Comunicação", value: "Conexão Wireless / Bluetooth e USB" },
+      { label: "Aplicações", value: "Veículos Leves, Comerciais, Híbridos e Elétricos (VHE)" },
+      { label: "Medições do Multímetro", value: "Tensão DC/AC, Corrente, Resistência, Continuidade e Diodos" },
+      { label: "Compatibilidade", value: "Scanners Launch da linha X-431 e dispositivos compatíveis" },
+      { label: "Garantia", value: "12 Meses de Fábrica" }
+    ],
+    defaultPrice: 4680.00,
+    defaultDiscount: 1190.00,
+    finalPrice: 3490.00,
+    image: "images/osciloscopio_launch_em101n.png",
+    selected: false,
+    quantity: 1
+  },
+
+  // --------------------------------------------------------------------------
+  // 13. MESA ELEVADORA PARA BATERIAS VHE
+  // --------------------------------------------------------------------------
+  {
+    id: "elevador-mesa-baterias-eev15-fortatech",
+    name: "Mesa Elevadora Eletro-Hidráulica para Baterias EV Forta Tech EEV 15 (1.500 kg)",
+    category: "Veículos Híbridos & Elétricos (VHE)",
+    categoryKey: "vhe",
+    tagline: "Máxima Estabilidade e Segurança na Remoção e Instalação de Packs de Baterias EV",
+    badge: "Capacidade 1.500 kg • Linha EV",
+    description: "Desenvolvido especialmente para centros automotivos e concessionárias que realizam serviços em veículos híbridos e elétricos, o Forta Tech EEV 15 oferece capacidade de 1.500 kg com estabilidade incomparável. Possui acionamento eletro-hidráulico suave, tampo com ajustes finos de nivelamento e sapatas isolantes ajustáveis para sustentação milimétrica de baterias de alta voltagem, motores elétricos e transmissões sob o veículo.",
+    features: [
+      "Capacidade de Carga de 1.500 kg: Suporta com folga os maiores packs de baterias de veículos elétricos e SUVs do mercado",
+      "Acionamento Eletro-Hidráulico Suave: Elevação e descida controladas por botoeira ergonômica sem esforço físico",
+      "Tampo com Regulagem Multi-Eixos: Ajuste angular de inclinação e posicionamento fino para encaixe perfeito no chassi",
+      "Sapatas Isolantes Reguláveis: Protegem a carcaça da bateria contra arranhões e curto-circuitos acidentais",
+      "Rodízios Industriais com Freio: Mobilidade ágil na oficina e travamento seguro no box de manutenção",
+      "Válvulas de Segurança Hidráulicas: Proteção contra sobrecarga e descida suave e controlada"
+    ],
+    specs: [
+      { label: "Capacidade de Carga", value: "1.500 kg (1,5 Toneladas)" },
+      { label: "Tipo de Acionamento", value: "Eletro-hidráulico motorizado integrado" },
+      { label: "Plataforma", value: "Tampo bipartido com regulagem de posicionamento e inclinação" },
+      { label: "Aplicações", value: "Packs de Baterias EV, Motores Elétricos, Transmissões e Conjuntos de Suspensão" },
+      { label: "Segurança Operacional", value: "Sapatas isolantes e travas mecânico-hidráulicas de segurança" },
+      { label: "Acabamento", value: "Pintura eletrostática a pó de alta durabilidade (Cinza Industrial)" },
+      { label: "Garantia", value: "12 Meses Forta Tech" }
+    ],
+    defaultPrice: 24900.00,
+    defaultDiscount: 3900.00,
+    finalPrice: 21000.00,
+    image: "images/elevador_mesa_eev15_fortatech.png",
+    selected: false,
+    quantity: 1
+  },
+
+  // --------------------------------------------------------------------------
+  // 14. BALANCEADORA DE RODAS SPIN 200
+  // --------------------------------------------------------------------------
+  {
+    id: "balanceadora-spin-200-sp200",
+    name: "Balanceadora de Rodas Motorizada com Laser Forta Tech Spin 200 (SP200)",
+    category: "Balanceadoras & Desmontadoras",
+    categoryKey: "balanceadoras",
+    tagline: "Tecnologia Essencial com Apontador Laser e Freio Automático",
+    badge: "Apontador Laser • Freio Automático",
+    description: "A SPIN 200 combina medição dinâmica e estática de alta precisão com freio automático e indicação a laser para aplicação perfeita de contrapesos. Projetada para oficinas e autocenters que buscam máxima rentabilidade com investimento inteligente, entrega leituras consistentes em apenas 7 segundos com operação intuitiva.",
+    features: [
+      "Indicação a Laser de Posição do Chumbo: Aponta exatamente onde colar o contrapeso, eliminando erros e retrabalhos",
+      "Acionamento e Freio Automáticos: Para automaticamente na posição correta de aplicação com agilidade e segurança",
+      "Múltiplos Modos de Balanceamento: Programas DYN (dinâmico), STA (estático) e modos ALU para rodas esportivas de liga leve",
+      "Ciclo Rápido de Medição: Diagnóstico completo de desbalanceamento em apenas 7 a 8 segundos",
+      "Auto-Calibração e Auto-Diagnóstico: Sistema inteligente que garante a repetibilidade e precisão milimétrica das leituras",
+      "Capô de Proteção com Partida Automática: Inicia o giro ao fechar a proteção com máxima segurança operacional"
+    ],
+    specs: [
+      { label: "Diâmetro de Rodas Suportado", value: "10\" a 24\"" },
+      { label: "Largura da Roda", value: "1,5\" a 20\"" },
+      { label: "Peso Máximo da Roda", value: "65 kg" },
+      { label: "Precisão de Balanceamento", value: "± 1 g" },
+      { label: "Tempo de Ciclo", value: "7 a 8 segundos" },
+      { label: "Recursos Especiais", value: "Laser indicador de peso, freio automático de posicionamento, display LED" },
+      { label: "Tensão de Alimentação", value: "220V Monofásico" },
+      { label: "Garantia", value: "12 Meses Forta Tech" }
+    ],
+    defaultPrice: 9490.00,
+    defaultDiscount: 1510.00,
+    finalPrice: 7980.00,
+    image: "images/balanceadora_spin_200.png",
+    selected: false,
+    quantity: 1
+  },
+
+  // --------------------------------------------------------------------------
+  // 15. TESTADORES PROFISSIONAIS DE BATERIAS
+  // --------------------------------------------------------------------------
+  {
+    id: "testador-baterias-launch-bst-860s",
+    name: "Testador de Baterias e Sistema Elétrico Launch BST-860S com Impressora",
+    category: "Scanners & DTEA",
+    categoryKey: "scanners",
+    tagline: "Diagnóstico em Segundos com Emissão de Relatório Impresso na Hora",
+    badge: "Impressora Térmica Integrada",
+    description: "O LAUNCH BST-860S é o testador de baterias e sistemas elétricos automotivos mais completo da categoria. Realiza diagnóstico do estado de saúde (SOH) e carga (SOC) da bateria, teste do motor de arranque e teste de ondulação do alternador em poucos segundos, emitindo imediatamente um comprovante impresso térmico com logotipo e dados do teste para entrega ao cliente.",
+    features: [
+      "Impressora Térmica Embutida: Imprime na hora o laudo de teste para apresentar ao cliente e fechar vendas de baterias",
+      "Compatibilidade Universal 12V e 24V: Testa baterias convencionais de chumbo-ácido, AGM, GEL, EFB e Start-Stop",
+      "Diagnóstico 3 em 1 Completo: Teste de Bateria, Teste de Partida (motor de arranque) e Teste de Carga (Alternador)",
+      "Tecnologia de Condutância Avançada: Não descarrega a bateria do veículo e garante testes rápidos e 100% seguros",
+      "Display LCD Colorido com Iluminação: Visualização clara dos parâmetros com menu intuitivo totalmente em português",
+      "Garras Kelvin de Alta Precisão: Medição a 4 fios que elimina resistência de contato e ruídos elétricos"
+    ],
+    specs: [
+      { label: "Tipos de Baterias", value: "Chumbo-ácido regular, Placa Plana AGM, Espiral AGM, GEL, EFB e Start-Stop" },
+      { label: "Tensão de Teste", value: "12V e 24V" },
+      { label: "Faixa de CCA", value: "100 a 2.000 CCA (normas SAE, DIN, EN, IEC, JIS)" },
+      { label: "Impressora", value: "Térmica integrada (bobina padrão de 57 mm)" },
+      { label: "Testes Integrados", value: "Saúde da bateria (SOH), Carga (SOC), Motor de arranque, Diodo/ondulação do alternador" },
+      { label: "Garantia", value: "12 Meses de Fábrica" }
+    ],
+    defaultPrice: 1989.00,
+    defaultDiscount: 424.00,
+    finalPrice: 1565.00,
+    image: "images/testador_baterias_bst_860s.png",
+    selected: false,
+    quantity: 1
+  },
+  {
+    id: "testador-baterias-launch-bst-360",
+    name: "Testador de Baterias Bluetooth Sem Fio Launch BST-360",
+    category: "Scanners & DTEA",
+    categoryKey: "scanners",
+    tagline: "Tecnologia Bluetooth para Diagnósticos Rápidos via Scanner ou Smartphone",
+    badge: "Conexão Sem Fio Bluetooth",
+    description: "O LAUNCH BST-360 é um testador sem fio inovador com tecnologia Bluetooth de baixa energia (BLE). Conecta-se diretamente aos scanners da linha Launch X-431 ou a smartphones Android e iOS. Avalia em segundos a saúde da bateria, a capacidade de partida a frio (CCA) e o sistema de carga do alternador, gerando laudos digitais instantâneos para envio por WhatsApp ou e-mail.",
+    features: [
+      "Conexão Sem Fio Bluetooth BLE: Realize testes sob o capô enquanto visualiza os gráficos no tablet ou celular",
+      "Integração Total com Scanners Launch: Funciona como acessório nativo nos scanners X-431 PRO SE, PRO 3 LINK, PAD VII e PAD IX",
+      "Aplicativo Gratuito para Celular (iOS e Android): Permite uso autônomo mesmo sem scanner na oficina",
+      "Geração de Laudos em PDF para WhatsApp: Comprove o estado da bateria com relatório profissional no celular do cliente",
+      "Proteção Eletrônica Total: Proteção contra inversão de polaridade, faíscas e sobretensão",
+      "Ultracompacto e Leve: Cabe na palma da mão e pode ser levado em atendimentos externos e socorro mecânico"
+    ],
+    specs: [
+      { label: "Tensão de Operação", value: "Baterias 12V (automóveis, motos, utilitários leves)" },
+      { label: "Faixa de CCA", value: "100 a 2.000 CCA (padrões CCA, DIN, JIS, EN, IEC, GB, SAE, MCA)" },
+      { label: "Conectividade", value: "Bluetooth 5.0 BLE de baixo consumo" },
+      { label: "Compatibilidade", value: "Scanners Launch X-431 e smartphones Android / iOS" },
+      { label: "Testes Realizados", value: "Teste de Bateria (SOH/SOC), Teste de Partida e Teste de Carga do Alternador" },
+      { label: "Garantia", value: "12 Meses de Fábrica" }
+    ],
+    defaultPrice: 849.00,
+    defaultDiscount: 269.00,
+    finalPrice: 580.00,
+    image: "images/testador_baterias_bst_360.png",
+    selected: false,
+    quantity: 1
   }
 ];
 

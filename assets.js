@@ -135,6 +135,30 @@ const EQUIPMENT_REAL_IMAGES = {
   mantaAntiChamasEv: {
     local: "images/manta_corta_fogo_bridgehill_car_standard.png",
     cdn: "https://bridgehill.com/media/25rp3i0b/bh_car_pro-x_mid_w.png"
+  },
+  osciloscopioLaunchO22: {
+    local: "images/osciloscopio_launch_o2_2.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202410301549457817osciloscopio_launch-1.png?v=1789408948"
+  },
+  osciloscopioLaunchEm101n: {
+    local: "images/osciloscopio_launch_em101n.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/osciloscopio_2_canais_multimetro_launch_em101n.png?v=1789669460"
+  },
+  elevadorMesaEev15: {
+    local: "images/elevador_mesa_eev15_fortatech.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202503210852527183elevador_240099ftc.png?v=1781543701"
+  },
+  balanceadoraSpin200: {
+    local: "images/balanceadora_spin_200.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202504241428549065spin_200_e48b8f0b-e5e9-4a87-9ba9-750d902043a2.png?v=1787761574"
+  },
+  testadorBateriasBst860s: {
+    local: "images/testador_baterias_bst_860s.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/BST-860.png?v=1764615281"
+  },
+  testadorBateriasBst360: {
+    local: "images/testador_baterias_bst_360.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/bst_360s.png?v=1764615526"
   }
 };
 
