@@ -128,9 +128,13 @@ const EQUIPMENT_REAL_IMAGES = {
     local: "images/avl_evaluate_vhe.png",
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/ISMARTEV_RT100.png?v=1739213175"
   },
+  mantaBridgehillCarStandard: {
+    local: "images/manta_corta_fogo_bridgehill_car_standard.png",
+    cdn: "https://bridgehill.com/media/25rp3i0b/bh_car_pro-x_mid_w.png"
+  },
   mantaAntiChamasEv: {
-    local: "images/manta_anti_chamas_ev.png",
-    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609101006346430kit_de_cabos.png?v=1789045619"
+    local: "images/manta_corta_fogo_bridgehill_car_standard.png",
+    cdn: "https://bridgehill.com/media/25rp3i0b/bh_car_pro-x_mid_w.png"
   }
 };
 
