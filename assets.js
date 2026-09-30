@@ -13,8 +13,8 @@ const EQUIPMENT_REAL_IMAGES = {
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609101446160789alinhadora_02.png?v=1789062466"
   },
   alinhadoraEssence3D: {
-    local: "images/alinhadora_advanced_3d.png",
-    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609021556119223essence_black.png?v=1788375406"
+    local: "images/alinhadora_essence_3d_black.png",
+    cdn: "https://fortatech.com.br/cdn/shop/files/202609021556119223essence_black.png?v=1788375406&width=960"
   },
   alinhadoraWA861: {
     local: "images/alinhadora_wa861_smartsafe.png",
