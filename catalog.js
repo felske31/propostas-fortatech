@@ -71,7 +71,7 @@ const DEFAULT_CATALOG = [
     image: "images/alinhadora_essence_3d_black.png",
     selected: false,
     quantity: 1
-,
+  },
   {
     id: "alinhadora-wa861-lite-3d",
     name: "Alinhadora WA 861 LITE 3D",
