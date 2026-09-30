@@ -28,6 +28,18 @@ const EQUIPMENT_REAL_IMAGES = {
     local: "images/elevador_2col_eb452_vermelho.png",
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609110906274918ep452-inferiror.png?v=1789128406"
   },
+  elevadorEBB452Cinza: {
+    local: "images/elevador_2col_ebb452_cinza.png",
+    cdn: "https://fortatech.com.br/cdn/shop/files/202609110906274918ep452-inferiror.png?v=1789128406"
+  },
+  elevadorEP452PorticoVermelho: {
+    local: "images/elevador_2col_ep452_portico_vermelho.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609141448073635ep452.png?v=1789408207"
+  },
+  elevadorLaunchTLT240SBLite: {
+    local: "images/elevador_launch_tlt240_sb_lite.png",
+    cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609101720582953tlt240.png?v=1789071705"
+  },
   elevadorEPP452Portico: {
     local: "images/elevador_2col_epp452_portico_grafite.png",
     cdn: "https://cdn.shopify.com/s/files/1/0697/8414/2079/files/202609141448073635ep452.png?v=1789408207"
