@@ -492,6 +492,17 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
+.difal-display-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 16px;
+  text-align: right;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
 /* ==========================================================================
    PRINT / PDF MEDIA QUERIES (IMPRESSÃO PERFEITA FULL-BLEED A4 210mm x 297mm)
    ========================================================================== */

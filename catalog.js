@@ -1423,7 +1423,14 @@ const DEFAULT_CONFIG = {
     installmentCount: 12,
     installmentValue: 0,
     installmentDesc: "Sem juros direto de fábrica / Cartão BNDES",
-    installmentCustomText: ""
+    installmentCustomText: "",
+    enableDifal: false,
+    difalMode: "added",
+    difalValue: 0,
+    difalRate: 0,
+    difalUF: "",
+    difalDesc: "",
+    difalShowInTable: false
   },
   terms: {
     payment: "Os valores expostos acima são para pagamento à Vista. Os financiamentos estão disponíveis para pagamentos em até 18x sem entrada diretamente com a Forta Tech e estão sujeitos a avaliação de crédito.",

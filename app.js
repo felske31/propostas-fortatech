@@ -173,6 +173,37 @@ function initFormBindings() {
   bindInput('prop-installment-desc', val => { state.proposal.installmentDesc = val; });
   bindInput('prop-installment-custom', val => { state.proposal.installmentCustomText = val; });
 
+  // DIFAL (Diferencial de Alíquota de ICMS)
+  bindCheckbox('toggle-difal', val => {
+    state.proposal.enableDifal = val;
+    const container = document.getElementById('difal-fields-container');
+    if (container) container.style.display = val ? 'block' : 'none';
+    updateDifalTermsBadge();
+  });
+  bindInput('prop-difal-mode', val => {
+    state.proposal.difalMode = val;
+    updateDifalTermsBadge();
+  });
+  bindInput('prop-difal-val', val => {
+    state.proposal.difalValue = parseFloat(val) || 0;
+    updateDifalTermsBadge();
+  });
+  bindInput('prop-difal-rate', val => {
+    state.proposal.difalRate = parseFloat(val) || 0;
+    updateDifalTermsBadge();
+  });
+  bindInput('prop-difal-uf', val => {
+    state.proposal.difalUF = val;
+    updateDifalTermsBadge();
+  });
+  bindInput('prop-difal-desc', val => {
+    state.proposal.difalDesc = val;
+    updateDifalTermsBadge();
+  });
+  bindCheckbox('toggle-difal-table', val => {
+    state.proposal.difalShowInTable = val;
+  });
+
   // Flags
   bindCheckbox('toggle-specs', val => { state.proposal.includeTechnicalSheets = val; });
   bindCheckbox('toggle-terms', val => { state.proposal.includeTermsAndPayment = val; });
@@ -251,6 +282,40 @@ function populateFormFields() {
   if (instContainer) {
     instContainer.style.display = state.proposal.enableInstallments ? 'block' : 'none';
   }
+
+  // DIFAL
+  setCheck('toggle-difal', state.proposal.enableDifal || false);
+  setVal('prop-difal-mode', state.proposal.difalMode || 'added');
+  setVal('prop-difal-val', state.proposal.difalValue > 0 ? state.proposal.difalValue : '');
+  setVal('prop-difal-rate', state.proposal.difalRate > 0 ? state.proposal.difalRate : '');
+  setVal('prop-difal-uf', state.proposal.difalUF || '');
+  setVal('prop-difal-desc', state.proposal.difalDesc || '');
+  setCheck('toggle-difal-table', state.proposal.difalShowInTable || false);
+
+  const difalContainer = document.getElementById('difal-fields-container');
+  if (difalContainer) {
+    difalContainer.style.display = state.proposal.enableDifal ? 'block' : 'none';
+  }
+
+  updateDifalTermsBadge();
+}
+
+function updateDifalTermsBadge() {
+  const box = document.getElementById('terms-difal-summary-box');
+  const text = document.getElementById('terms-difal-summary-text');
+  if (!box || !text) return;
+  if (!state.proposal.enableDifal) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  const totals = calculateTotals();
+  const modeLabel = state.proposal.difalMode === 'added' 
+    ? 'Somado ao Total (+ R$)' 
+    : (state.proposal.difalMode === 'client' ? 'Por Conta do Comprador (Informativo)' : 'Já incluso no Preço');
+  const valStr = totals.difalAmount > 0 ? formatBRL(totals.difalAmount) : 'R$ 0,00';
+  const ufStr = state.proposal.difalUF ? ` [Destino: ${state.proposal.difalUF.toUpperCase()}]` : '';
+  text.innerHTML = `<strong>${valStr}</strong> (${modeLabel})${ufStr}`;
 }
 
 function setVal(id, val) {
@@ -694,10 +759,27 @@ function calculateTotals() {
     finalTotal += (orig - disc);
   });
 
+  const productsAndServicesTotal = finalTotal;
+  let difalAmount = 0;
+
+  if (state.proposal.enableDifal) {
+    if (state.proposal.difalValue && parseFloat(state.proposal.difalValue) > 0) {
+      difalAmount = parseFloat(state.proposal.difalValue) || 0;
+    } else if (state.proposal.difalRate && parseFloat(state.proposal.difalRate) > 0) {
+      difalAmount = productsAndServicesTotal * (parseFloat(state.proposal.difalRate) / 100);
+    }
+
+    if (state.proposal.difalMode === 'added') {
+      finalTotal += difalAmount;
+    }
+  }
+
   return {
     subtotalOriginal,
     totalDiscounts,
-    finalTotal
+    finalTotal,
+    productsAndServicesTotal,
+    difalAmount
   };
 }
 
@@ -916,6 +998,32 @@ function renderProposalDocument() {
     }))
   ];
 
+  if (state.proposal.enableDifal && state.proposal.difalShowInTable && totals.difalAmount > 0) {
+    const isClient = state.proposal.difalMode === 'client';
+    const isIncluded = state.proposal.difalMode === 'included';
+    const modeTag = isClient ? ' (Por Conta do Comprador)' : (isIncluded ? ' (Incluso no Preço)' : '');
+    const ufTag = state.proposal.difalUF ? ` - ${state.proposal.difalUF.toUpperCase()}` : '';
+    const rateTag = state.proposal.difalRate ? ` (${state.proposal.difalRate}%)` : '';
+
+    allQuoteItems.push({
+      isService: true,
+      isDifal: true,
+      isClientInfo: isClient,
+      isIncluded: isIncluded,
+      qty: 1,
+      name: `DIFAL (ICMS${rateTag}${ufTag})${modeTag}`,
+      description: state.proposal.difalDesc || (
+        isClient 
+          ? 'Diferencial de Alíquota interestadual - recolhimento sob responsabilidade do comprador' 
+          : (isIncluded 
+              ? 'Diferencial de Alíquota interestadual já contemplado nos valores propostos' 
+              : 'Diferencial de Alíquota interestadual acrescido ao montante da proposta')
+      ),
+      price: totals.difalAmount,
+      discount: (isClient || isIncluded) ? totals.difalAmount : 0
+    });
+  }
+
   // Algoritmo de Paginação Inteligente para Documentos A4
   function paginateQuoteItems(items) {
     if (items.length <= 4) return [items];
@@ -984,6 +1092,24 @@ function renderProposalDocument() {
                   const unitDisc = item.discount || 0;
                   const totalItem = (unitOrig - unitDisc) * (item.isService ? 1 : qty);
 
+                  let discColContent = '—';
+                  let totalColContent = formatBRL(totalItem);
+
+                  if (item.isDifal) {
+                    if (item.isClientInfo) {
+                      discColContent = '<span style="color: #fbbf24; font-size: 0.78rem; font-weight: 700;">POR CONTA</span>';
+                      totalColContent = '<span style="color: #fbbf24; font-size: 0.85rem; font-weight: 800;">INFORMATIVO</span>';
+                    } else if (item.isIncluded) {
+                      discColContent = '<span style="color: #38bdf8; font-size: 0.78rem; font-weight: 700;">JÁ INCLUSO</span>';
+                      totalColContent = '<span style="color: #38bdf8; font-size: 0.85rem; font-weight: 800;">INCLUSO</span>';
+                    } else {
+                      discColContent = '—';
+                      totalColContent = formatBRL(totalItem);
+                    }
+                  } else if (unitDisc > 0) {
+                    discColContent = formatBRL(unitDisc * (item.isService ? 1 : qty));
+                  }
+
                   return `
                     <tr style="background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'}; border-bottom: 1px solid #232838;">
                       <td style="padding: 14px 12px; text-align: center; font-weight: 800; color: #E50914;">${qty}</td>
@@ -992,8 +1118,8 @@ function renderProposalDocument() {
                         ${item.description ? `<div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">${item.description}</div>` : ''}
                       </td>
                       <td style="padding: 14px 16px; text-align: right; color: #cbd5e1; font-weight: 600;">${formatBRL(unitOrig)}</td>
-                      <td style="padding: 14px 16px; text-align: right; color: #22c55e; font-weight: 800;">${unitDisc > 0 ? formatBRL(unitDisc * (item.isService ? 1 : qty)) : '—'}</td>
-                      <td style="padding: 14px 16px; text-align: right; font-weight: 900; color: #FFFFFF; font-size: 1.05rem;">${formatBRL(totalItem)}</td>
+                      <td style="padding: 14px 16px; text-align: right; color: #22c55e; font-weight: 800;">${discColContent}</td>
+                      <td style="padding: 14px 16px; text-align: right; font-weight: 900; color: #FFFFFF; font-size: 1.05rem;">${totalColContent}</td>
                     </tr>
                   `;
                 }).join('')}
@@ -1022,15 +1148,24 @@ function renderProposalDocument() {
                     <span class="pmc-row-lbl">VALOR TABELA / UNIT.</span>
                     <span class="pmc-row-val orig">${formatBRL(unitOrig)}</span>
                   </div>
-                  ${unitDisc > 0 ? `
+                  ${item.isDifal ? `
+                    <div class="pmc-row disc-row">
+                      <span class="pmc-row-lbl">CONDIÇÃO FISCAL</span>
+                      <span class="pmc-row-val disc" style="color: ${item.isClientInfo ? '#fbbf24' : (item.isIncluded ? '#38bdf8' : '#4ade80')};">
+                        ${item.isClientInfo ? 'POR CONTA DO CLIENTE' : (item.isIncluded ? 'JÁ INCLUSO NO PREÇO' : 'ACRESCIDO AO TOTAL')}
+                      </span>
+                    </div>
+                  ` : (unitDisc > 0 ? `
                     <div class="pmc-row disc-row">
                       <span class="pmc-row-lbl">${(state.proposal.discountCampaignName || 'DESCONTO ESPECIAL').toUpperCase()}</span>
                       <span class="pmc-row-val disc">- ${formatBRL(unitDisc * (item.isService ? 1 : qty))}</span>
                     </div>
-                  ` : ''}
+                  ` : '')}
                   <div class="pmc-row total-row">
                     <span class="pmc-row-lbl">VALOR FINAL LÍQUIDO</span>
-                    <span class="pmc-row-val total">${formatBRL(totalItem)}</span>
+                    <span class="pmc-row-val total" style="color: ${item.isClientInfo ? '#fbbf24' : (item.isIncluded ? '#38bdf8' : '#ffffff')};">
+                      ${item.isDifal && item.isClientInfo ? 'INFORMATIVO' : (item.isDifal && item.isIncluded ? 'INCLUSO' : formatBRL(totalItem))}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1055,6 +1190,22 @@ function renderProposalDocument() {
                   <span class="economy-badge-pill" style="font-size: 0.82rem; color: #22c55e; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 12px; border-radius: 20px;">
                     <span>✓</span> Economia Total Concedida: ${formatBRL(totals.totalDiscounts)}
                   </span>
+                </div>
+              ` : ''}
+
+              ${state.proposal.enableDifal && totals.difalAmount > 0 ? `
+                <div class="difal-display-box" style="margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px; text-align: right; display: inline-block;">
+                  <div class="difal-header" style="font-size: 0.75rem; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    DIFAL ICMS ${state.proposal.difalUF ? `(${state.proposal.difalUF.toUpperCase()})` : ''}:
+                  </div>
+                  <div class="difal-val-text" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 900; color: #ffffff; margin-top: 2px;">
+                    ${formatBRL(totals.difalAmount)}
+                    <span style="font-size: 0.75rem; font-weight: 700; color: ${state.proposal.difalMode === 'added' ? '#4ade80' : (state.proposal.difalMode === 'client' ? '#fbbf24' : '#38bdf8')}; margin-left: 6px;">
+                      ${state.proposal.difalMode === 'added' ? '(+ Acrescido ao Total)' : (state.proposal.difalMode === 'client' ? '(Por Conta do Comprador)' : '(Incluso no Preço)')}
+                    </span>
+                  </div>
+                  ${state.proposal.difalDesc ? `<div class="difal-desc-text" style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">${state.proposal.difalDesc}</div>` : ''}
                 </div>
               ` : ''}
 
@@ -1168,6 +1319,35 @@ function renderProposalDocument() {
               </div>
               <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
                 ${state.terms.taxes}
+              </div>
+            </div>
+          ` : ''}
+
+          ${state.proposal.enableDifal ? `
+            <div class="term-detail-card" style="background: rgba(229, 9, 20, 0.05); border-left: 4px solid #E50914; padding: 12px 18px; border-radius: 6px;">
+              <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase; color: #E50914; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <span>DIFERENCIAL DE ALÍQUOTA (DIFAL / ICMS)</span>
+                <span style="font-size: 0.75rem; font-weight: 800; background: #E50914; color: #fff; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;">
+                  ${state.proposal.difalMode === 'added' ? 'ACRESCIDO AO TOTAL' : (state.proposal.difalMode === 'client' ? 'POR CONTA DO COMPRADOR' : 'INCLUSO NO VALOR')}
+                </span>
+              </div>
+              <div style="font-size: 0.88rem; line-height: 1.5; color: #cbd5e1;">
+                ${(() => {
+                  if (state.proposal.difalDesc && state.proposal.difalDesc.trim().length > 0) {
+                    return state.proposal.difalDesc;
+                  }
+                  const ufText = state.proposal.difalUF ? ` ao estado de destino (${state.proposal.difalUF.toUpperCase()})` : '';
+                  const valText = totals.difalAmount > 0 ? ` no valor de ${formatBRL(totals.difalAmount)}` : '';
+                  const rateText = state.proposal.difalRate ? ` (alíquota de ${state.proposal.difalRate}%)` : '';
+                  
+                  if (state.proposal.difalMode === 'added') {
+                    return `Diferencial de Alíquota de ICMS (DIFAL) aplicável${ufText}${rateText}${valText}. O valor do DIFAL está devidamente acrescido ao montante total da proposta comercial para recolhimento via GNRE ou faturamento.`;
+                  } else if (state.proposal.difalMode === 'client') {
+                    return `Diferencial de Alíquota de ICMS (DIFAL) aplicável${ufText}${rateText}${valText}. Conforme legislação fiscal vigente, o recolhimento deste tributo é de exclusiva responsabilidade do cliente comprador na entrada em sua unidade federativa.`;
+                  } else {
+                    return `Diferencial de Alíquota de ICMS (DIFAL) aplicável${ufText}${rateText}${valText}. O montante tributário correspondente já se encontra contemplado e embutido nos preços unitários cotados nesta proposta.`;
+                  }
+                })()}
               </div>
             </div>
           ` : ''}

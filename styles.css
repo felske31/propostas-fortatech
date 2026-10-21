@@ -1279,6 +1279,31 @@ input:checked + .slider:before {
   color: #E50914 !important;
 }
 
+.difal-display-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 16px;
+  text-align: right;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.theme-clean-light .difal-display-box {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.theme-clean-light .difal-display-box div {
+  color: #0f172a !important;
+}
+
+.theme-clean-light .difal-display-box span {
+  color: #E50914 !important;
+}
+
 /* ==========================================================================
    PAGE: CONDIÇÕES COMERCIAIS, SUPORTE E GARANTIA
    ========================================================================== */
@@ -2588,6 +2613,23 @@ input:checked + .slider:before {
   }
 
   .installment-desc-text {
+    text-align: center !important;
+  }
+
+  .difal-display-box {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    margin-top: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  .difal-header {
+    justify-content: center !important;
+  }
+
+  .difal-val-text,
+  .difal-desc-text {
     text-align: center !important;
   }
 }
