@@ -1904,6 +1904,7 @@ function renderUserBadge() {
   const currentUser = V2Auth.getCurrentUser();
 
   if (currentUser) {
+    closeAuthModal();
     const isAdm = currentUser.role === 'admin';
     const initial = (currentUser.name && currentUser.name.length > 0) ? currentUser.name.charAt(0).toUpperCase() : 'U';
 
@@ -1928,8 +1929,8 @@ function renderUserBadge() {
       </div>
     `;
 
-    // Atualiza nome do vendedor na proposta automaticamente se for o padrão
-    if (state.proposal && (!state.proposal.sellerName || state.proposal.sellerName.includes('Consultoria Comercial'))) {
+    // Atualiza dados do vendedor na proposta com o usuário logado
+    if (state.proposal && !currentEditingProposalId) {
       state.proposal.sellerName = currentUser.name;
       if (currentUser.phone) state.proposal.sellerPhone = currentUser.phone;
       if (currentUser.email) state.proposal.sellerEmail = currentUser.email;
@@ -1946,6 +1947,7 @@ function renderUserBadge() {
           cancelEditingProposal();
           renderUserBadge();
           updateProposalsCountBadge();
+          openAuthModal('login');
           showV2Toast('Você saiu da sua conta.');
         }
       });
@@ -1965,6 +1967,9 @@ function renderUserBadge() {
     if (openBtn) {
       openBtn.addEventListener('click', () => openAuthModal('login'));
     }
+
+    // Exibe a Tela de Login obrigatoriamente ao entrar sem sessão ativa
+    openAuthModal('login');
   }
 }
 
@@ -2023,10 +2028,14 @@ function bindAuthModalEvents() {
   const formLogin = document.getElementById('auth-form-login');
   const formSignup = document.getElementById('auth-form-signup');
 
-  if (closeBtn) closeBtn.addEventListener('click', closeAuthModal);
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      if (V2Auth.getCurrentUser()) closeAuthModal();
+    });
+  }
   if (modal) {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeAuthModal();
+      if (e.target === modal && V2Auth.getCurrentUser()) closeAuthModal();
     });
   }
 

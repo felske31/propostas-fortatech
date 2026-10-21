@@ -144,17 +144,17 @@
   gap: 10px;
 }
 
-/* Modal de Autenticação (Login / Cadastro) */
+/* Tela / Portal de Autenticação (Login / Cadastro) */
 .auth-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: radial-gradient(circle at 50% 20%, rgba(45, 12, 20, 0.96) 0%, rgba(9, 11, 16, 0.98) 80%);
+  backdrop-filter: blur(18px);
   z-index: 9999;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
