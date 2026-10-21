@@ -11,8 +11,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=20261021_areas">
-  <link rel="stylesheet" href="styles-v2.css?v=20261021_areas">
+  <link rel="stylesheet" href="styles.css?v=20261021_dashboard">
+  <link rel="stylesheet" href="styles-v2.css?v=20261021_dashboard">
 </head>
 <body>
 
@@ -673,7 +673,7 @@
     </div>
   </div>
 
-  <!-- MODAL DO HISTÓRICO DE PROPOSTAS COMERCIAIS -->
+  <!-- MODAL DO HISTÓRICO DE PROPOSTAS COMERCIAIS & DASHBOARD ADMIN -->
   <div class="proposals-modal-overlay" id="proposals-modal-overlay">
     <div class="proposals-modal-card">
       <div class="proposals-modal-header">
@@ -684,22 +684,74 @@
           </svg>
           <span id="proposals-modal-title-text">Histórico de Propostas Comerciais</span>
         </div>
-        <button class="auth-close-btn" id="proposals-modal-close" type="button" style="position: static; font-size: 1.8rem; line-height: 1;">&times;</button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="btn btn-secondary btn-sm" id="btn-toggle-admin-dashboard" type="button" style="display: none; font-size: 0.78rem; padding: 6px 12px;">
+            📊 Recolher / Expandir Dashboard
+          </button>
+          <button class="auth-close-btn" id="proposals-modal-close" type="button" style="position: static; font-size: 1.8rem; line-height: 1;">&times;</button>
+        </div>
       </div>
 
-      <!-- Métricas do Administrador (Visível somente para perfil admin) -->
-      <div class="admin-metrics-bar" id="admin-metrics-container" style="display: none;">
-        <div class="metric-stat-box">
-          <div class="metric-stat-label">Total de Propostas Geradas</div>
-          <div class="metric-stat-value" id="metric-total-count">0</div>
+      <!-- DASHBOARD EXECUTIVO DO ADMINISTRADOR (Visível somente para perfil admin) -->
+      <div class="admin-dashboard-wrapper" id="admin-metrics-container" style="display: none;">
+        <!-- Linha 1: 4 KPIs Executivos -->
+        <div class="admin-kpi-grid">
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Total de Propostas Emitidas</div>
+            <div class="metric-stat-value" id="metric-total-count">0</div>
+            <div class="metric-stat-sub" id="metric-status-breakdown">0 enviadas • 0 rascunhos</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Volume Total em Propostas (Pipeline)</div>
+            <div class="metric-stat-value" id="metric-total-value">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-avg-ticket">Ticket Médio: R$ 0,00</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Propostas Aprovadas (Fechadas)</div>
+            <div class="metric-stat-value" style="color: #22c55e;" id="metric-approved-value">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-win-rate" style="color: #4ade80;">Conversão: 0% (0 ganhas)</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Descontos Concedidos</div>
+            <div class="metric-stat-value" style="color: #f59e0b;" id="metric-total-discount">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-avg-discount-pct">Média de desconto: 0%</div>
+          </div>
         </div>
-        <div class="metric-stat-box">
-          <div class="metric-stat-label">Volume Total Cotado</div>
-          <div class="metric-stat-value" id="metric-total-value">R$ 0,00</div>
-        </div>
-        <div class="metric-stat-box">
-          <div class="metric-stat-label">Propostas Aprovadas (Fechadas)</div>
-          <div class="metric-stat-value" style="color: #22c55e;" id="metric-approved-value">R$ 0,00</div>
+
+        <!-- Linha 2: 3 Painéis de Insights (Por Área, Top Vendedores, Top Equipamentos) -->
+        <div class="admin-insights-grid" id="admin-insights-panels">
+          <!-- Painel 1: Quantidade e Volume por Área Comercial -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>🏢 Desempenho por Área Comercial</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Clique para filtrar</span>
+            </div>
+            <div class="insight-panel-body" id="insight-areas-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Painel 2: Ranking de Consultores / Vendedores -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>🏆 Ranking de Vendedores</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Volume & Conversão</span>
+            </div>
+            <div class="insight-panel-body" id="insight-sellers-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Painel 3: Top Equipamentos Mais Cotados -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>⚙️ Equipamentos Mais Cotados</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Demanda de Catálogo</span>
+            </div>
+            <div class="insight-panel-body" id="insight-products-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -750,10 +802,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <!-- Scripts V2 -->
-  <script src="assets.js?v=20261021_areas"></script>
-  <script src="catalog.js?v=20261021_areas"></script>
-  <script src="embedded_styles.js?v=20261021_areas"></script>
-  <script src="v2-auth-db.js?v=20261021_areas"></script>
-  <script src="app-v2.js?v=20261021_areas"></script>
+  <script src="assets.js?v=20261021_dashboard"></script>
+  <script src="catalog.js?v=20261021_dashboard"></script>
+  <script src="embedded_styles.js?v=20261021_dashboard"></script>
+  <script src="v2-auth-db.js?v=20261021_dashboard"></script>
+  <script src="app-v2.js?v=20261021_dashboard"></script>
 </body>
 </html>

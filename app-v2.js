@@ -2236,6 +2236,19 @@ function bindProposalsManagerEvents() {
   if (sellerSelect) {
     sellerSelect.addEventListener('change', () => renderProposalsGrid());
   }
+
+  // Botão expandir/recolher painéis de insights do Admin
+  const btnToggleDashboard = document.getElementById('btn-toggle-admin-dashboard');
+  if (btnToggleDashboard) {
+    btnToggleDashboard.addEventListener('click', () => {
+      const panels = document.getElementById('admin-insights-panels');
+      const label = document.getElementById('admin-dashboard-toggle-label');
+      if (!panels) return;
+      const isHidden = panels.style.display === 'none';
+      panels.style.display = isHidden ? 'grid' : 'none';
+      if (label) label.textContent = isHidden ? 'Ocultar Insights' : 'Mostrar Insights';
+    });
+  }
 }
 
 function openProposalsModal() {
@@ -2246,10 +2259,12 @@ function openProposalsModal() {
   const title = document.getElementById('proposals-modal-title-text');
   const adminMetrics = document.getElementById('admin-metrics-container');
   const sellerFilterWrap = document.getElementById('seller-filter-wrap');
+  const btnToggleDashboard = document.getElementById('btn-toggle-admin-dashboard');
 
   if (currentUser && currentUser.role === 'admin') {
     if (title) title.innerHTML = '📊 Gestão Central de Propostas Comerciais <span style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">VISÃO ADMIN</span>';
-    if (adminMetrics) adminMetrics.style.display = 'grid';
+    if (adminMetrics) adminMetrics.style.display = 'block';
+    if (btnToggleDashboard) btnToggleDashboard.style.display = 'inline-flex';
     if (sellerFilterWrap) {
       sellerFilterWrap.style.display = 'flex';
       populateSellerFilterOptions();
@@ -2257,6 +2272,7 @@ function openProposalsModal() {
   } else {
     if (title) title.innerHTML = '📂 Minhas Propostas Geradas';
     if (adminMetrics) adminMetrics.style.display = 'none';
+    if (btnToggleDashboard) btnToggleDashboard.style.display = 'none';
     if (sellerFilterWrap) sellerFilterWrap.style.display = 'none';
   }
 
@@ -2429,24 +2445,252 @@ function getStatusBadgeHtml(status, id) {
 
 function updateAdminMetrics(proposals) {
   const totalCountEl = document.getElementById('metric-total-count');
+  const statusBreakdownEl = document.getElementById('metric-status-breakdown');
   const totalValEl = document.getElementById('metric-total-value');
+  const avgTicketEl = document.getElementById('metric-avg-ticket');
   const approvedValEl = document.getElementById('metric-approved-value');
+  const winRateEl = document.getElementById('metric-win-rate');
+  const totalDiscountEl = document.getElementById('metric-total-discount');
+  const avgDiscountPctEl = document.getElementById('metric-avg-discount-pct');
 
   if (!totalCountEl) return;
 
+  // 1. KPIs baseados nas propostas filtradas atualmente
   const totalCount = proposals.length;
   let totalSum = 0;
   let approvedSum = 0;
+  let approvedCount = 0;
+  let sentCount = 0;
+  let draftCount = 0;
+  let rejectedCount = 0;
+  let totalDiscountSum = 0;
+  let totalOriginalSum = 0;
 
   proposals.forEach(p => {
     const val = p.totalValue || 0;
     totalSum += val;
-    if (p.status === 'approved') approvedSum += val;
+
+    if (p.status === 'approved') {
+      approvedSum += val;
+      approvedCount++;
+    } else if (p.status === 'rejected') {
+      rejectedCount++;
+    } else if (p.status === 'draft') {
+      draftCount++;
+    } else {
+      sentCount++;
+    }
+
+    // Cálculo de descontos concedidos na proposta
+    if (p.stateData && p.stateData.catalog) {
+      let propOriginal = 0;
+      p.stateData.catalog.forEach(cat => {
+        cat.products.forEach(prod => {
+          if (prod.selected && prod.qty > 0) {
+            propOriginal += (prod.price || 0) * prod.qty;
+          }
+        });
+      });
+      totalOriginalSum += propOriginal;
+      const discVal = p.discountValue || 0;
+      if (discVal > 0) {
+        totalDiscountSum += discVal;
+      } else if (propOriginal > val && val > 0) {
+        totalDiscountSum += (propOriginal - val);
+      }
+    }
   });
 
+  const avgTicket = totalCount > 0 ? (totalSum / totalCount) : 0;
+  const winRate = totalCount > 0 ? ((approvedCount / totalCount) * 100) : 0;
+  const avgDiscPct = totalOriginalSum > 0 ? ((totalDiscountSum / totalOriginalSum) * 100) : 0;
+
   totalCountEl.textContent = totalCount;
+  if (statusBreakdownEl) {
+    statusBreakdownEl.innerHTML = `<span style="color:#60a5fa;">${sentCount} env</span> • <span style="color:#4ade80;">${approvedCount} aprov</span> • <span style="color:#f87171;">${rejectedCount} rec</span> • <span>${draftCount} rasc</span>`;
+  }
   if (totalValEl) totalValEl.textContent = formatBRL(totalSum);
+  if (avgTicketEl) avgTicketEl.textContent = formatBRL(avgTicket);
   if (approvedValEl) approvedValEl.textContent = formatBRL(approvedSum);
+  if (winRateEl) winRateEl.textContent = `${winRate.toFixed(1)}% (${approvedCount}/${totalCount})`;
+  if (totalDiscountEl) totalDiscountEl.textContent = formatBRL(totalDiscountSum);
+  if (avgDiscountPctEl) avgDiscountPctEl.textContent = `${avgDiscPct.toFixed(1)}%`;
+
+  // 2. Painéis de Insights (usamos todas as propostas do banco para o comparativo entre Áreas, e propostas filtradas para Vendedores/Produtos)
+  const allProposals = V2DB.getProposals({});
+  const allUsers = V2DB.getAllSellers();
+  const userAreaLookup = {};
+  allUsers.forEach(u => {
+    if (u.id && u.title) userAreaLookup[u.id] = u.title;
+  });
+
+  // 2A. Desempenho por Área Comercial (4 áreas oficiais)
+  const officialAreas = ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
+  const areaStats = {};
+  officialAreas.forEach(a => {
+    areaStats[a] = { count: 0, value: 0, approved: 0 };
+  });
+
+  allProposals.forEach(p => {
+    const areaName = p.userArea || userAreaLookup[p.userId] || 'Outros';
+    if (!areaStats[areaName]) {
+      areaStats[areaName] = { count: 0, value: 0, approved: 0 };
+    }
+    areaStats[areaName].count++;
+    areaStats[areaName].value += (p.totalValue || 0);
+    if (p.status === 'approved') areaStats[areaName].approved++;
+  });
+
+  const maxAreaCount = Math.max(1, ...Object.values(areaStats).map(s => s.count));
+  const currentAreaFilter = document.getElementById('proposals-filter-area')?.value || 'all';
+  const areasListEl = document.getElementById('insight-areas-list');
+
+  if (areasListEl) {
+    const areaColors = {
+      'Inside Sales': '#3b82f6',
+      'Key Account': '#a855f7',
+      'Projetos': '#f59e0b',
+      'Outside Sales': '#22c55e'
+    };
+
+    const sortedAreas = Object.keys(areaStats).sort((a, b) => areaStats[b].count - areaStats[a].count || areaStats[b].value - areaStats[a].value);
+
+    areasListEl.innerHTML = sortedAreas.map(areaName => {
+      const st = areaStats[areaName];
+      const pctWidth = Math.round((st.count / maxAreaCount) * 100);
+      const sharePct = allProposals.length > 0 ? Math.round((st.count / allProposals.length) * 100) : 0;
+      const barColor = areaColors[areaName] || '#64748b';
+      const isSelected = currentAreaFilter === areaName;
+
+      return `
+        <div class="insight-row-item clickable-insight" data-area="${areaName}" style="${isSelected ? 'border-color: #E50914; background: rgba(229, 9, 20, 0.12);' : ''}" title="Clique para filtrar propostas da área ${areaName}">
+          <div class="insight-row-top">
+            <span class="insight-row-name">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${barColor}; display: inline-block;"></span>
+              ${areaName}
+              ${isSelected ? '<span style="font-size:0.65rem; color:#ff4d58; font-weight:800;">(FILTRADO)</span>' : ''}
+            </span>
+            <div class="insight-row-stats">
+              <span style="color: #94a3b8; font-weight: 600;">${formatBRL(st.value)}</span>
+              <span class="insight-badge-count">${st.count} prop (${sharePct}%)</span>
+            </div>
+          </div>
+          <div class="insight-progress-bar">
+            <div class="insight-progress-fill" style="width: ${pctWidth}%; background: ${barColor};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Clique na Área filtra automaticamente (ou limpa o filtro se clicar novamente)
+    areasListEl.querySelectorAll('.clickable-insight').forEach(row => {
+      row.addEventListener('click', () => {
+        const clickedArea = row.getAttribute('data-area');
+        const areaSelect = document.getElementById('proposals-filter-area');
+        if (areaSelect) {
+          areaSelect.value = (areaSelect.value === clickedArea) ? 'all' : clickedArea;
+          renderProposalsGrid();
+        }
+      });
+    });
+  }
+
+  // 2B. Ranking de Consultores / Vendedores
+  const sellersListEl = document.getElementById('insight-sellers-list');
+  if (sellersListEl) {
+    const sellerMap = {};
+    proposals.forEach(p => {
+      const sKey = p.userId || p.userName || 'desconhecido';
+      const sName = p.userName || 'Consultor';
+      const sArea = p.userArea || userAreaLookup[p.userId] || '';
+      if (!sellerMap[sKey]) {
+        sellerMap[sKey] = { name: sName, area: sArea, count: 0, value: 0, approvedCount: 0 };
+      }
+      sellerMap[sKey].count++;
+      sellerMap[sKey].value += (p.totalValue || 0);
+      if (p.status === 'approved') sellerMap[sKey].approvedCount++;
+    });
+
+    const sortedSellers = Object.values(sellerMap).sort((a, b) => b.value - a.value || b.count - a.count);
+    const maxSellerVal = Math.max(1, ...sortedSellers.map(s => s.value));
+
+    if (sortedSellers.length === 0) {
+      sellersListEl.innerHTML = `<div style="color: #64748b; font-size: 0.78rem; text-align: center; padding: 18px 0;">Nenhum dado para o filtro atual.</div>`;
+    } else {
+      sellersListEl.innerHTML = sortedSellers.map((s, idx) => {
+        const pct = Math.round((s.value / maxSellerVal) * 100);
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`;
+        return `
+          <div class="insight-row-item">
+            <div class="insight-row-top">
+              <span class="insight-row-name">
+                <span>${medal}</span>
+                <span>${s.name}</span>
+                ${s.area ? `<span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.06); color: #94a3b8;">${s.area}</span>` : ''}
+              </span>
+              <div class="insight-row-stats">
+                <span style="color: #22c55e; font-weight: 700;">${formatBRL(s.value)}</span>
+                <span class="insight-badge-count">${s.count} prop</span>
+              </div>
+            </div>
+            <div class="insight-progress-bar">
+              <div class="insight-progress-fill" style="width: ${pct}%; background: linear-gradient(90deg, #E50914, #f59e0b);"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2C. Equipamentos Mais Cotados nas Propostas
+  const productsListEl = document.getElementById('insight-products-list');
+  if (productsListEl) {
+    const prodMap = {};
+    proposals.forEach(p => {
+      if (!p.stateData || !p.stateData.catalog) return;
+      p.stateData.catalog.forEach(cat => {
+        cat.products.forEach(prod => {
+          if (prod.selected && prod.qty > 0) {
+            const key = prod.code || prod.name;
+            if (!prodMap[key]) {
+              prodMap[key] = { name: prod.name, code: prod.code, qty: 0, proposalsCount: 0, revenue: 0 };
+            }
+            prodMap[key].qty += Number(prod.qty) || 0;
+            prodMap[key].proposalsCount += 1;
+            prodMap[key].revenue += (Number(prod.price) || 0) * (Number(prod.qty) || 0);
+          }
+        });
+      });
+    });
+
+    const sortedProds = Object.values(prodMap).sort((a, b) => b.qty - a.qty || b.proposalsCount - a.proposalsCount).slice(0, 6);
+    const maxProdQty = Math.max(1, ...sortedProds.map(item => item.qty));
+
+    if (sortedProds.length === 0) {
+      productsListEl.innerHTML = `<div style="color: #64748b; font-size: 0.78rem; text-align: center; padding: 18px 0;">Nenhum equipamento cotado nas propostas filtradas.</div>`;
+    } else {
+      productsListEl.innerHTML = sortedProds.map(item => {
+        const pct = Math.round((item.qty / maxProdQty) * 100);
+        return `
+          <div class="insight-row-item">
+            <div class="insight-row-top">
+              <span class="insight-row-name" style="font-size: 0.76rem;">
+                <span style="color: #f87171; font-weight: 800;">[${item.code}]</span>
+                <span>${item.name}</span>
+              </span>
+              <div class="insight-row-stats">
+                <span style="color: #94a3b8; font-size: 0.72rem;">em ${item.proposalsCount} prop</span>
+                <span class="insight-badge-count" style="background: rgba(34, 197, 94, 0.15); color: #4ade80;">${item.qty} un.</span>
+              </div>
+            </div>
+            <div class="insight-progress-bar">
+              <div class="insight-progress-fill" style="width: ${pct}%; background: #22c55e;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 // 7. CARREGAR PROPOSTA NO GERADOR PARA EDIÇÃO
