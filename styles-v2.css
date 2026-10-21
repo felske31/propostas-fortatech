@@ -1,0 +1,553 @@
+/* ==========================================================================
+   FORTA TECH - V2 STYLES (AUTENTICAÇÃO & GESTÃO DE PROPOSTAS)
+   Extensão modular para o ambiente paralelo V2
+   ========================================================================== */
+
+/* Botão de Sucesso */
+.btn-success {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border: 1px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.btn-success:hover {
+  background: #15803d !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4) !important;
+}
+
+/* Badge de Contagem */
+.badge-count {
+  background: #E50914;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 12px;
+  margin-left: 6px;
+  line-height: 1;
+}
+
+/* Barra de Perfil do Usuário no Topo */
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.84rem;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #E50914;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.user-avatar.admin {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.user-name-role {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.user-role-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.user-role-tag.admin {
+  color: #fbbf24;
+}
+
+.btn-logout {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.btn-logout:hover {
+  color: #E50914;
+}
+
+/* Banner Indicador de Modo de Edição */
+.editing-banner {
+  background: linear-gradient(90deg, rgba(229, 9, 20, 0.2) 0%, rgba(20, 24, 36, 0.95) 100%);
+  border-bottom: 2px solid #E50914;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  animation: slideDown 0.3s ease;
+  z-index: 90;
+  position: relative;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.editing-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: #f1f5f9;
+}
+
+.editing-tag {
+  background: #E50914;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.editing-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Modal de Autenticação (Login / Cadastro) */
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-modal-card {
+  background: #131722;
+  border: 1px solid #232a3d;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(229, 9, 20, 0.15);
+  overflow: hidden;
+  animation: modalPop 0.25s ease;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.auth-modal-header {
+  padding: 24px 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid #232a3d;
+  position: relative;
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.auth-close-btn:hover {
+  color: #fff;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid #232a3d;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #94a3b8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.auth-tab-btn.active {
+  color: #E50914;
+  border-bottom-color: #E50914;
+  background: rgba(229, 9, 20, 0.05);
+}
+
+.auth-form-body {
+  padding: 24px;
+}
+
+.auth-form-group {
+  margin-bottom: 16px;
+}
+
+.auth-form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-form-group input {
+  width: 100%;
+  background: #0b0e17;
+  border: 1px solid #232838;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.auth-form-group input:focus {
+  border-color: #E50914;
+  outline: none;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
+}
+
+.auth-submit-btn {
+  width: 100%;
+  background: #E50914;
+  color: #fff;
+  border: none;
+  padding: 13px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.auth-submit-btn:hover {
+  background: #c40811;
+  box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+}
+
+.auth-demo-hint {
+  margin-top: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px dashed rgba(245, 158, 11, 0.3);
+  font-size: 0.78rem;
+  color: #fbbf24;
+  line-height: 1.4;
+}
+
+/* Modal do Histórico de Propostas */
+.proposals-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 9998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.proposals-modal-card {
+  background: #11141e;
+  border: 1px solid #232a3d;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.proposals-modal-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid #232a3d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #141824;
+}
+
+.proposals-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Barra de Filtros e Busca */
+.proposals-filter-bar {
+  padding: 16px 28px;
+  background: #0f121a;
+  border-bottom: 1px solid #1e2433;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-input-wrap {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.filter-input-wrap input {
+  width: 100%;
+  background: #161b26;
+  border: 1px solid #283042;
+  border-radius: 8px;
+  color: #fff;
+  padding: 9px 12px 9px 36px;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.filter-input-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.filter-select {
+  background: #161b26;
+  border: 1px solid #283042;
+  border-radius: 8px;
+  color: #fff;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+}
+
+/* Indicadores de Status */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-draft {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.status-sent {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.status-approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Lista de Propostas */
+.proposals-list-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.proposals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.proposal-item-card {
+  background: #161b26;
+  border: 1px solid #252e42;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.proposal-item-card:hover {
+  border-color: #E50914;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.pic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pic-number {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.pic-client-name {
+  font-weight: 700;
+  color: #e2e8f0;
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+
+.pic-client-city {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.pic-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.pic-total-val {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #22c55e;
+}
+
+.pic-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #202738;
+}
+
+.pic-actions button {
+  flex: 1;
+}
+
+/* Métricas do Painel Admin */
+.admin-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  padding: 16px 28px;
+  background: #141824;
+  border-bottom: 1px solid #232a3d;
+}
+
+.metric-stat-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.metric-stat-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metric-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fff;
+  margin-top: 2px;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .proposals-modal-card {
+    max-height: 95vh;
+  }
+  .proposals-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-metrics-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .editing-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
