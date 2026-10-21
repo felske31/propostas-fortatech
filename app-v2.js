@@ -1906,17 +1906,23 @@ function renderUserBadge() {
   if (currentUser) {
     closeAuthModal();
     const isAdm = currentUser.role === 'admin';
+    const isGestor = currentUser.role === 'gestor';
     const initial = (currentUser.name && currentUser.name.length > 0) ? currentUser.name.charAt(0).toUpperCase() : 'U';
+
+    const propBtnLabel = document.getElementById('label-proposals-btn');
+    if (propBtnLabel) {
+      propBtnLabel.textContent = isAdm ? 'Gestão de Propostas' : (isGestor ? `Propostas (${currentUser.managedArea})` : 'Minhas Propostas');
+    }
 
     container.innerHTML = `
       <div class="user-pill">
-        <div class="user-avatar ${isAdm ? 'admin' : ''}">
-          ${isAdm ? '👑' : initial}
+        <div class="user-avatar ${isAdm || isGestor ? 'admin' : ''}">
+          ${isAdm ? '👑' : (isGestor ? '⭐' : initial)}
         </div>
         <div class="user-name-role">
           <span class="user-name">${currentUser.name}</span>
-          <span class="user-role-tag ${isAdm ? 'admin' : ''}">
-            ${isAdm ? 'Administrador Geral' : (currentUser.title || 'Consultor Comercial')}
+          <span class="user-role-tag ${isAdm || isGestor ? 'admin' : ''}">
+            ${isAdm ? 'Administrador Geral' : (isGestor ? `Gestor • ${currentUser.managedArea}` : (currentUser.title || 'Consultor Comercial'))}
           </span>
         </div>
         <button class="btn-logout" id="btn-logout" title="Sair da Conta (${currentUser.email})">
@@ -2259,15 +2265,29 @@ function openProposalsModal() {
   const title = document.getElementById('proposals-modal-title-text');
   const adminMetrics = document.getElementById('admin-metrics-container');
   const sellerFilterWrap = document.getElementById('seller-filter-wrap');
+  const areaSelect = document.getElementById('proposals-filter-area');
   const btnToggleDashboard = document.getElementById('btn-toggle-admin-dashboard');
 
   if (currentUser && currentUser.role === 'admin') {
     if (title) title.innerHTML = '📊 Gestão Central de Propostas Comerciais <span style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">VISÃO ADMIN</span>';
     if (adminMetrics) adminMetrics.style.display = 'block';
     if (btnToggleDashboard) btnToggleDashboard.style.display = 'inline-flex';
+    if (areaSelect) areaSelect.style.display = 'inline-block';
     if (sellerFilterWrap) {
       sellerFilterWrap.style.display = 'flex';
-      populateSellerFilterOptions();
+      populateSellerFilterOptions(null);
+    }
+  } else if (currentUser && currentUser.role === 'gestor' && currentUser.managedArea) {
+    if (title) title.innerHTML = `📊 Gestão Comercial — ${currentUser.managedArea} <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">GESTOR DE ÁREA</span>`;
+    if (adminMetrics) adminMetrics.style.display = 'block';
+    if (btnToggleDashboard) btnToggleDashboard.style.display = 'inline-flex';
+    if (areaSelect) {
+      areaSelect.value = currentUser.managedArea;
+      areaSelect.style.display = 'none';
+    }
+    if (sellerFilterWrap) {
+      sellerFilterWrap.style.display = 'flex';
+      populateSellerFilterOptions(currentUser.managedArea);
     }
   } else {
     if (title) title.innerHTML = '📂 Minhas Propostas Geradas';
@@ -2285,14 +2305,14 @@ function closeProposalsModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function populateSellerFilterOptions() {
+function populateSellerFilterOptions(areaFilter = null) {
   const select = document.getElementById('proposals-filter-seller');
   if (!select) return;
 
-  const sellers = V2DB.getAllSellers();
-  let html = '<option value="all">Todos os Vendedores</option>';
+  const sellers = V2DB.getAllSellers(areaFilter);
+  let html = `<option value="all">${areaFilter ? `Todos de ${areaFilter}` : 'Todos os Vendedores'}</option>`;
   sellers.forEach(s => {
-    const areaBadge = s.title ? ` — ${s.title}` : '';
+    const areaBadge = (!areaFilter && s.title) ? ` — ${s.title}` : '';
     html += `<option value="${s.id}">${s.name}${areaBadge}</option>`;
   });
   select.innerHTML = html;
@@ -2303,16 +2323,18 @@ function renderProposalsGrid() {
   const container = document.getElementById('proposals-grid-container');
   if (!container) return;
 
+  const currentUser = V2Auth.getCurrentUser();
+  const isGestor = currentUser && currentUser.role === 'gestor' && currentUser.managedArea;
+
   const query = document.getElementById('proposals-filter-query')?.value || '';
   const status = document.getElementById('proposals-filter-status')?.value || 'all';
-  const area = document.getElementById('proposals-filter-area')?.value || 'all';
+  const area = isGestor ? currentUser.managedArea : (document.getElementById('proposals-filter-area')?.value || 'all');
   const sellerId = document.getElementById('proposals-filter-seller')?.value || 'all';
 
   const proposals = V2DB.getProposals({ query, status, area, sellerId });
-  const currentUser = V2Auth.getCurrentUser();
 
-  // Atualiza métricas se for Admin
-  if (currentUser && currentUser.role === 'admin') {
+  // Atualiza métricas se for Admin ou Gestor de Área
+  if (currentUser && (currentUser.role === 'admin' || isGestor)) {
     updateAdminMetrics(proposals);
   }
 
@@ -2333,7 +2355,7 @@ function renderProposalsGrid() {
   }
 
   container.innerHTML = proposals.map(p => {
-    const isOwner = currentUser && (currentUser.id === p.userId || currentUser.role === 'admin');
+    const isOwner = currentUser && V2DB.canUserManageProposal(currentUser, p);
     const isCurrentlyEditing = currentEditingProposalId === p.id;
 
     return `
@@ -2522,23 +2544,28 @@ function updateAdminMetrics(proposals) {
   if (totalDiscountEl) totalDiscountEl.textContent = formatBRL(totalDiscountSum);
   if (avgDiscountPctEl) avgDiscountPctEl.textContent = `${avgDiscPct.toFixed(1)}%`;
 
-  // 2. Painéis de Insights (usamos todas as propostas do banco para o comparativo entre Áreas, e propostas filtradas para Vendedores/Produtos)
+  // 2. Painéis de Insights (Admin vê comparativo de todas as Áreas; Gestor vê somente sua própria Área + Funil de Status da Área)
+  const currentUser = V2Auth.getCurrentUser();
+  const isGestor = currentUser && currentUser.role === 'gestor' && currentUser.managedArea;
   const allProposals = V2DB.getProposals({});
-  const allUsers = V2DB.getAllSellers();
+  const allUsers = V2DB.getAllSellers(isGestor ? currentUser.managedArea : null);
   const userAreaLookup = {};
-  allUsers.forEach(u => {
+  V2DB.getAllSellers().forEach(u => {
     if (u.id && u.title) userAreaLookup[u.id] = u.title;
   });
 
-  // 2A. Desempenho por Área Comercial (4 áreas oficiais)
-  const officialAreas = ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
+  // 2A. Desempenho por Área Comercial
+  const officialAreas = isGestor
+    ? [currentUser.managedArea]
+    : ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
+
   const areaStats = {};
   officialAreas.forEach(a => {
     areaStats[a] = { count: 0, value: 0, approved: 0 };
   });
 
   allProposals.forEach(p => {
-    const areaName = p.userArea || userAreaLookup[p.userId] || 'Outros';
+    const areaName = isGestor ? currentUser.managedArea : (p.userArea || userAreaLookup[p.userId] || 'Outros');
     if (!areaStats[areaName]) {
       areaStats[areaName] = { count: 0, value: 0, approved: 0 };
     }
@@ -2559,58 +2586,116 @@ function updateAdminMetrics(proposals) {
       'Outside Sales': '#22c55e'
     };
 
-    const sortedAreas = Object.keys(areaStats).sort((a, b) => areaStats[b].count - areaStats[a].count || areaStats[b].value - areaStats[a].value);
+    if (isGestor) {
+      // Para Gestor de Área: mostra o consolidado da sua área + funil por status da sua equipe
+      const st = areaStats[currentUser.managedArea] || { count: 0, value: 0, approved: 0 };
+      const barColor = areaColors[currentUser.managedArea] || '#38bdf8';
+      const statusRows = [
+        { key: 'sent', label: 'Enviadas ao Cliente', color: '#3b82f6', count: sentCount, val: proposals.filter(p => !p.status || p.status === 'sent').reduce((acc, x) => acc + (x.totalValue || 0), 0) },
+        { key: 'approved', label: '✓ Aprovadas (Fechadas)', color: '#22c55e', count: approvedCount, val: approvedSum },
+        { key: 'draft', label: 'Em Rascunho', color: '#94a3b8', count: draftCount, val: proposals.filter(p => p.status === 'draft').reduce((acc, x) => acc + (x.totalValue || 0), 0) },
+        { key: 'rejected', label: '✕ Recusadas', color: '#ef4444', count: rejectedCount, val: proposals.filter(p => p.status === 'rejected').reduce((acc, x) => acc + (x.totalValue || 0), 0) }
+      ];
+      const maxStCount = Math.max(1, totalCount);
 
-    areasListEl.innerHTML = sortedAreas.map(areaName => {
-      const st = areaStats[areaName];
-      const pctWidth = Math.round((st.count / maxAreaCount) * 100);
-      const sharePct = allProposals.length > 0 ? Math.round((st.count / allProposals.length) * 100) : 0;
-      const barColor = areaColors[areaName] || '#64748b';
-      const isSelected = currentAreaFilter === areaName;
-
-      return `
-        <div class="insight-row-item clickable-insight" data-area="${areaName}" style="${isSelected ? 'border-color: #E50914; background: rgba(229, 9, 20, 0.12);' : ''}" title="Clique para filtrar propostas da área ${areaName}">
+      areasListEl.innerHTML = `
+        <div class="insight-row-item" style="border-color: ${barColor}; background: rgba(56, 189, 248, 0.08);">
           <div class="insight-row-top">
             <span class="insight-row-name">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: ${barColor}; display: inline-block;"></span>
-              ${areaName}
-              ${isSelected ? '<span style="font-size:0.65rem; color:#ff4d58; font-weight:800;">(FILTRADO)</span>' : ''}
+              <span>Área: ${currentUser.managedArea}</span>
             </span>
             <div class="insight-row-stats">
-              <span style="color: #94a3b8; font-weight: 600;">${formatBRL(st.value)}</span>
-              <span class="insight-badge-count">${st.count} prop (${sharePct}%)</span>
+              <span style="color: #fff; font-weight: 800;">${formatBRL(st.value)}</span>
+              <span class="insight-badge-count">${st.count} prop (100%)</span>
             </div>
           </div>
           <div class="insight-progress-bar">
-            <div class="insight-progress-fill" style="width: ${pctWidth}%; background: ${barColor};"></div>
+            <div class="insight-progress-fill" style="width: 100%; background: ${barColor};"></div>
           </div>
         </div>
+        ${statusRows.map(sr => {
+          const w = Math.round((sr.count / maxStCount) * 100);
+          return `
+            <div class="insight-row-item">
+              <div class="insight-row-top">
+                <span class="insight-row-name" style="font-size: 0.76rem; color: #cbd5e1;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: ${sr.color}; display: inline-block;"></span>
+                  ${sr.label}
+                </span>
+                <div class="insight-row-stats">
+                  <span style="color: #94a3b8;">${formatBRL(sr.val)}</span>
+                  <span class="insight-badge-count">${sr.count}</span>
+                </div>
+              </div>
+              <div class="insight-progress-bar">
+                <div class="insight-progress-fill" style="width: ${w}%; background: ${sr.color};"></div>
+              </div>
+            </div>
+          `;
+        }).join('')}
       `;
-    }).join('');
+    } else {
+      const sortedAreas = Object.keys(areaStats).sort((a, b) => areaStats[b].count - areaStats[a].count || areaStats[b].value - areaStats[a].value);
 
-    // Clique na Área filtra automaticamente (ou limpa o filtro se clicar novamente)
-    areasListEl.querySelectorAll('.clickable-insight').forEach(row => {
-      row.addEventListener('click', () => {
-        const clickedArea = row.getAttribute('data-area');
-        const areaSelect = document.getElementById('proposals-filter-area');
-        if (areaSelect) {
-          areaSelect.value = (areaSelect.value === clickedArea) ? 'all' : clickedArea;
-          renderProposalsGrid();
-        }
+      areasListEl.innerHTML = sortedAreas.map(areaName => {
+        const st = areaStats[areaName];
+        const pctWidth = Math.round((st.count / maxAreaCount) * 100);
+        const sharePct = allProposals.length > 0 ? Math.round((st.count / allProposals.length) * 100) : 0;
+        const barColor = areaColors[areaName] || '#64748b';
+        const isSelected = currentAreaFilter === areaName;
+
+        return `
+          <div class="insight-row-item clickable-insight" data-area="${areaName}" style="${isSelected ? 'border-color: #E50914; background: rgba(229, 9, 20, 0.12);' : ''}" title="Clique para filtrar propostas da área ${areaName}">
+            <div class="insight-row-top">
+              <span class="insight-row-name">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${barColor}; display: inline-block;"></span>
+                ${areaName}
+                ${isSelected ? '<span style="font-size:0.65rem; color:#ff4d58; font-weight:800;">(FILTRADO)</span>' : ''}
+              </span>
+              <div class="insight-row-stats">
+                <span style="color: #94a3b8; font-weight: 600;">${formatBRL(st.value)}</span>
+                <span class="insight-badge-count">${st.count} prop (${sharePct}%)</span>
+              </div>
+            </div>
+            <div class="insight-progress-bar">
+              <div class="insight-progress-fill" style="width: ${pctWidth}%; background: ${barColor};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Clique na Área filtra automaticamente (ou limpa o filtro se clicar novamente)
+      areasListEl.querySelectorAll('.clickable-insight').forEach(row => {
+        row.addEventListener('click', () => {
+          const clickedArea = row.getAttribute('data-area');
+          const areaSelect = document.getElementById('proposals-filter-area');
+          if (areaSelect) {
+            areaSelect.value = (areaSelect.value === clickedArea) ? 'all' : clickedArea;
+            renderProposalsGrid();
+          }
+        });
       });
-    });
+    }
   }
 
-  // 2B. Ranking de Consultores / Vendedores
+  // 2B. Ranking de Consultores / Vendedores (inclui membros cadastrados do time da área)
   const sellersListEl = document.getElementById('insight-sellers-list');
   if (sellersListEl) {
     const sellerMap = {};
+    if (isGestor) {
+      allUsers.forEach(u => {
+        if (u.id) {
+          sellerMap[u.id] = { id: u.id, name: u.name || 'Consultor', area: currentUser.managedArea, count: 0, value: 0, approvedCount: 0 };
+        }
+      });
+    }
     proposals.forEach(p => {
       const sKey = p.userId || p.userName || 'desconhecido';
       const sName = p.userName || 'Consultor';
-      const sArea = p.userArea || userAreaLookup[p.userId] || '';
+      const sArea = p.userArea || userAreaLookup[p.userId] || (isGestor ? currentUser.managedArea : '');
       if (!sellerMap[sKey]) {
-        sellerMap[sKey] = { name: sName, area: sArea, count: 0, value: 0, approvedCount: 0 };
+        sellerMap[sKey] = { id: p.userId || '', name: sName, area: sArea, count: 0, value: 0, approvedCount: 0 };
       }
       sellerMap[sKey].count++;
       sellerMap[sKey].value += (p.totalValue || 0);

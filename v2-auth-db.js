@@ -18,6 +18,39 @@ const V2_STORAGE_KEYS = {
   PROPOSALS: 'fortatech_v2_proposals'
 };
 
+// Mapeamento Oficial de Gestores por Área Comercial
+const AREA_MANAGERS_MAP = {
+  'priscila.badaro@fortatech.com.br': 'Inside Sales',
+  'daniela.rocha@fortatech.com.br': 'Inside Sales',
+  'rodrigo.galski@fortatech.com.br': 'Projetos',
+  'ricardo.andrade@fortatech.com.br': 'Outside Sales',
+  'silvio.nascimento@fortatech.com.br': 'Key Account',
+  'thiago.selmann@fortatech.com.br': 'Key Account'
+};
+
+function getManagedAreaForEmail(email) {
+  const clean = String(email || '').trim().toLowerCase();
+  return AREA_MANAGERS_MAP[clean] || null;
+}
+
+function applyManagerRoleIfApplicable(userObj) {
+  if (!userObj || !userObj.email) return userObj;
+  const cleanEmail = String(userObj.email).trim().toLowerCase();
+  if (cleanEmail === 'admin@fortatech.com.br') {
+    userObj.role = 'admin';
+    return userObj;
+  }
+  const managedArea = getManagedAreaForEmail(cleanEmail);
+  if (managedArea) {
+    userObj.role = 'gestor';
+    userObj.managedArea = managedArea;
+    if (!userObj.title || !userObj.title.toLowerCase().includes(managedArea.toLowerCase())) {
+      userObj.title = managedArea;
+    }
+  }
+  return userObj;
+}
+
 let fbApp = null;
 let fbAuth = null;
 let fbDb = null;
@@ -81,14 +114,28 @@ function initV2Database() {
       fbDb.collection('fortatech_users').onSnapshot(snapshot => {
         const cloudUsers = [];
         snapshot.forEach(doc => {
-          cloudUsers.push(doc.data());
+          const data = doc.data();
+          const managedArea = getManagedAreaForEmail(data.email);
+          if (managedArea && (data.role !== 'gestor' || data.managedArea !== managedArea)) {
+            data.role = 'gestor';
+            data.managedArea = managedArea;
+            if (!data.title || !data.title.toLowerCase().includes(managedArea.toLowerCase())) {
+              data.title = managedArea;
+            }
+            fbDb.collection('fortatech_users').doc(doc.id).set({
+              role: 'gestor',
+              managedArea: managedArea,
+              title: data.title
+            }, { merge: true }).catch(() => {});
+          }
+          cloudUsers.push(data);
         });
         if (cloudUsers.length > 0) {
           // Mescla com senhas locais para acesso offline se necessário
           const localUsers = getStoredUsers();
           const merged = cloudUsers.map(cu => {
             const loc = localUsers.find(lu => lu.email.toLowerCase() === (cu.email || '').toLowerCase());
-            return { ...loc, ...cu };
+            return applyManagerRoleIfApplicable({ ...loc, ...cu });
           });
           if (!merged.some(u => u.email.toLowerCase() === 'admin@fortatech.com.br')) {
             merged.push(defaultAdmin);
@@ -148,7 +195,9 @@ const V2Auth = {
   getCurrentUser() {
     try {
       const raw = localStorage.getItem(V2_STORAGE_KEYS.SESSION);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const user = JSON.parse(raw);
+      return applyManagerRoleIfApplicable(user);
     } catch (e) {
       return null;
     }
@@ -157,6 +206,7 @@ const V2Auth = {
   async login(email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const isDefaultAdmin = (cleanEmail === 'admin@fortatech.com.br' && (password === 'admin' || password === 'admin123'));
+    const managedArea = getManagedAreaForEmail(cleanEmail);
 
     // 1. Tenta autenticar no Firebase Authentication na nuvem
     if (isFirebaseConnected && fbAuth) {
@@ -175,14 +225,15 @@ const V2Auth = {
         }
 
         const localMatch = getStoredUsers().find(u => u.email.toLowerCase() === cleanEmail);
-        const sessionData = {
+        const sessionData = applyManagerRoleIfApplicable({
           id: uid,
           name: (profile && profile.name) || (localMatch && localMatch.name) || (isDefaultAdmin ? 'Administrador Forta Tech' : cleanEmail.split('@')[0]),
           email: cleanEmail,
           phone: (profile && profile.phone) || (localMatch && localMatch.phone) || '+55 41 98508-1076',
-          role: isDefaultAdmin ? 'admin' : ((profile && profile.role) || (localMatch && localMatch.role) || 'consultor'),
-          title: (profile && profile.title) || (localMatch && localMatch.title) || (isDefaultAdmin ? 'Diretoria Comercial' : 'Consultor Técnico Comercial')
-        };
+          role: isDefaultAdmin ? 'admin' : (managedArea ? 'gestor' : ((profile && profile.role) || (localMatch && localMatch.role) || 'consultor')),
+          managedArea: managedArea || (profile && profile.managedArea) || null,
+          title: (profile && profile.title) || (localMatch && localMatch.title) || managedArea || (isDefaultAdmin ? 'Diretoria Comercial' : 'Consultor Técnico Comercial')
+        });
 
         localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
         return sessionData;
@@ -193,14 +244,15 @@ const V2Auth = {
         if (!localUser) {
           throw new Error('E-mail ou senha inválidos.');
         }
-        const sessionData = {
+        const sessionData = applyManagerRoleIfApplicable({
           id: localUser.id,
           name: localUser.name,
           email: localUser.email,
           phone: localUser.phone || '+55 41 98508-1076',
           role: localUser.role || 'consultor',
+          managedArea: localUser.managedArea || null,
           title: localUser.title || 'Consultor Técnico Comercial'
-        };
+        });
         localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
         return sessionData;
       }
@@ -213,14 +265,15 @@ const V2Auth = {
       throw new Error('E-mail ou senha inválidos.');
     }
 
-    const sessionData = {
+    const sessionData = applyManagerRoleIfApplicable({
       id: user.id,
       name: user.name,
       email: user.email,
       phone: user.phone || '+55 41 98508-1076',
       role: user.role || 'consultor',
+      managedArea: user.managedArea || null,
       title: user.title || 'Consultor Técnico Comercial'
-    };
+    });
 
     localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
     return sessionData;
@@ -259,17 +312,24 @@ const V2Auth = {
       }
     }
 
-    const newUser = {
+    const managedArea = getManagedAreaForEmail(cleanEmail);
+    const effectiveTitle = managedArea || userData.title || 'Inside Sales';
+    const effectiveAreas = managedArea
+      ? Array.from(new Set([managedArea, ...(userData.areas || [])]))
+      : (userData.areas || [effectiveTitle]);
+
+    const newUser = applyManagerRoleIfApplicable({
       id: uid,
       name: userData.name.trim(),
       email: cleanEmail,
       password: userData.password,
       phone: userData.phone || '',
-      role: 'consultor',
-      title: userData.title || 'Inside Sales',
-      areas: userData.areas || [userData.title || 'Inside Sales'],
+      role: managedArea ? 'gestor' : 'consultor',
+      managedArea: managedArea || null,
+      title: effectiveTitle,
+      areas: effectiveAreas,
       createdAt: new Date().toISOString()
-    };
+    });
 
     // Salva localmente
     const users = getStoredUsers().filter(u => u.email.toLowerCase() !== cleanEmail);
@@ -284,6 +344,7 @@ const V2Auth = {
         email: newUser.email,
         phone: newUser.phone,
         role: newUser.role,
+        managedArea: newUser.managedArea || null,
         title: newUser.title,
         areas: newUser.areas,
         createdAt: newUser.createdAt
@@ -296,6 +357,7 @@ const V2Auth = {
       email: newUser.email,
       phone: newUser.phone,
       role: newUser.role,
+      managedArea: newUser.managedArea || null,
       title: newUser.title,
       areas: newUser.areas
     };
@@ -314,6 +376,42 @@ const V2Auth = {
 
 // 3. SERVIÇO DE BANCO DE DADOS DE PROPOSTAS (CLOUD FIRESTORE + CACHE LOCAL)
 const V2DB = {
+  // Verifica se uma proposta pertence a determinada Área Comercial
+  doesProposalBelongToArea(proposal, areaName) {
+    if (!proposal || !areaName) return false;
+    const targetArea = String(areaName).trim().toLowerCase();
+    const propArea = String(proposal.userArea || '').toLowerCase();
+    if (propArea.includes(targetArea)) return true;
+
+    // Caso a proposta antiga não tenha userArea gravado, verifica o cadastro do vendedor
+    const users = getStoredUsers();
+    const author = users.find(u =>
+      (proposal.userId && u.id === proposal.userId) ||
+      (proposal.userEmail && u.email && u.email.toLowerCase() === proposal.userEmail.toLowerCase())
+    );
+    if (author) {
+      const authorTitle = String(author.title || '').toLowerCase();
+      const authorManaged = String(author.managedArea || '').toLowerCase();
+      const authorAreas = Array.isArray(author.areas) ? author.areas.map(a => String(a).toLowerCase()) : [];
+      if (authorTitle.includes(targetArea) || authorManaged === targetArea || authorAreas.some(a => a.includes(targetArea))) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  canUserManageProposal(user, proposal) {
+    if (!user || !proposal) return false;
+    if (user.role === 'admin') return true;
+    if (proposal.userId === user.id || (proposal.userEmail && user.email && proposal.userEmail.toLowerCase() === user.email.toLowerCase())) {
+      return true;
+    }
+    if (user.role === 'gestor' && user.managedArea) {
+      return this.doesProposalBelongToArea(proposal, user.managedArea);
+    }
+    return false;
+  },
+
   saveProposal(proposalPayload) {
     const user = V2Auth.getCurrentUser();
     if (!user) {
@@ -330,7 +428,7 @@ const V2DB = {
         throw new Error('Proposta não encontrada para atualização.');
       }
 
-      if (user.role !== 'admin' && proposals[index].userId !== user.id) {
+      if (!this.canUserManageProposal(user, proposals[index])) {
         throw new Error('Você não tem permissão para editar propostas de outro vendedor.');
       }
 
@@ -347,7 +445,7 @@ const V2DB = {
         userName: user.name,
         userEmail: user.email,
         userPhone: user.phone || '',
-        userArea: user.title || '',
+        userArea: user.managedArea || user.title || '',
         clientName: proposalPayload.clientName || 'Cliente Sem Nome',
         clientCity: proposalPayload.clientCity || '',
         proposalNumber: proposalPayload.proposalNumber || ('PROP-' + new Date().getFullYear() + '/' + Math.floor(1000 + Math.random() * 9000)),
@@ -379,15 +477,26 @@ const V2DB = {
 
     let list = getStoredProposals();
 
-    if (user.role !== 'admin') {
-      list = list.filter(p => p.userId === user.id || (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()));
-    } else {
+    if (user.role === 'admin') {
       if (filters.sellerId && filters.sellerId !== 'all') {
         list = list.filter(p => p.userId === filters.sellerId);
       }
       if (filters.area && filters.area !== 'all') {
-        list = list.filter(p => (p.userArea || '').toLowerCase().includes(filters.area.toLowerCase()));
+        list = list.filter(p => this.doesProposalBelongToArea(p, filters.area));
       }
+    } else if (user.role === 'gestor' && user.managedArea) {
+      // Gestor de área vê todas as propostas da sua área (e as suas próprias)
+      list = list.filter(p =>
+        this.doesProposalBelongToArea(p, user.managedArea) ||
+        p.userId === user.id ||
+        (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase())
+      );
+      if (filters.sellerId && filters.sellerId !== 'all') {
+        list = list.filter(p => p.userId === filters.sellerId);
+      }
+    } else {
+      // Consultor vê apenas as suas próprias propostas
+      list = list.filter(p => p.userId === user.id || (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()));
     }
 
     if (filters.status && filters.status !== 'all') {
@@ -420,7 +529,7 @@ const V2DB = {
     const target = proposals.find(p => p.id === id);
     if (!target) return;
 
-    if (user.role !== 'admin' && target.userId !== user.id) {
+    if (!this.canUserManageProposal(user, target)) {
       throw new Error('Você não tem permissão para excluir esta proposta.');
     }
 
@@ -465,9 +574,16 @@ const V2DB = {
     return this.saveProposal(clone);
   },
 
-  getAllSellers() {
-    const users = getStoredUsers();
-    return users.filter(u => u.role !== 'admin');
+  getAllSellers(areaFilter = null) {
+    const users = getStoredUsers().filter(u => u.role !== 'admin');
+    if (!areaFilter) return users;
+    const target = String(areaFilter).trim().toLowerCase();
+    return users.filter(u => {
+      const t = String(u.title || '').toLowerCase();
+      const m = String(u.managedArea || '').toLowerCase();
+      const arr = Array.isArray(u.areas) ? u.areas.map(a => String(a).toLowerCase()) : [];
+      return t.includes(target) || m === target || arr.some(a => a.includes(target));
+    });
   }
 };
 
