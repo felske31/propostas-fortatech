@@ -2046,41 +2046,61 @@ function bindAuthModalEvents() {
 
   // Submit Login
   if (formLogin) {
-    formLogin.addEventListener('submit', (e) => {
+    formLogin.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
       const pass = document.getElementById('login-password').value;
+      const submitBtn = formLogin.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Autenticando no Firebase...';
+      }
 
       try {
-        const user = V2Auth.login(email, pass);
+        const user = await V2Auth.login(email, pass);
         closeAuthModal();
         renderUserBadge();
         updateProposalsCountBadge();
         showV2Toast(`Bem-vindo de volta, ${user.name}!`);
       } catch (err) {
         alert(err.message || 'Falha ao autenticar.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Entrar no Gerador de Propostas ➔';
+        }
       }
     });
   }
 
   // Submit Cadastro
   if (formSignup) {
-    formSignup.addEventListener('submit', (e) => {
+    formSignup.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const phone = document.getElementById('signup-phone').value;
       const title = document.getElementById('signup-title').value;
       const password = document.getElementById('signup-password').value;
+      const submitBtn = formSignup.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Criando conta no Firebase...';
+      }
 
       try {
-        const user = V2Auth.signUp({ name, email, phone, title, password });
+        const user = await V2Auth.signUp({ name, email, phone, title, password });
         closeAuthModal();
         renderUserBadge();
         updateProposalsCountBadge();
         showV2Toast(`Conta criada com sucesso! Olá, ${user.name}.`);
       } catch (err) {
         alert(err.message || 'Falha ao criar conta.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Criar Conta e Acessar ➔';
+        }
       }
     });
   }
