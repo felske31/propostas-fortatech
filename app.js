@@ -2482,17 +2482,23 @@ function updateAdminMetrics(proposals) {
     }
 
     // Cálculo de descontos concedidos na proposta
-    if (p.stateData && p.stateData.catalog) {
+    if (p.stateData && Array.isArray(p.stateData.catalog)) {
       let propOriginal = 0;
-      p.stateData.catalog.forEach(cat => {
-        cat.products.forEach(prod => {
-          if (prod.selected && prod.qty > 0) {
-            propOriginal += (prod.price || 0) * prod.qty;
+      let propDisc = 0;
+      p.stateData.catalog.forEach(item => {
+        const list = Array.isArray(item.products) ? item.products : [item];
+        list.forEach(prod => {
+          const qty = Number(prod.quantity ?? prod.qty ?? 1);
+          if (prod.selected && qty > 0) {
+            const unitPrice = Number(prod.defaultPrice ?? prod.price ?? 0);
+            const unitDisc = Number(prod.defaultDiscount ?? prod.discount ?? 0);
+            propOriginal += unitPrice * qty;
+            propDisc += unitDisc * qty;
           }
         });
       });
       totalOriginalSum += propOriginal;
-      const discVal = p.discountValue || 0;
+      const discVal = p.discountValue || propDisc || 0;
       if (discVal > 0) {
         totalDiscountSum += discVal;
       } else if (propOriginal > val && val > 0) {
@@ -2647,17 +2653,21 @@ function updateAdminMetrics(proposals) {
   if (productsListEl) {
     const prodMap = {};
     proposals.forEach(p => {
-      if (!p.stateData || !p.stateData.catalog) return;
-      p.stateData.catalog.forEach(cat => {
-        cat.products.forEach(prod => {
-          if (prod.selected && prod.qty > 0) {
-            const key = prod.code || prod.name;
+      if (!p.stateData || !Array.isArray(p.stateData.catalog)) return;
+      p.stateData.catalog.forEach(item => {
+        const list = Array.isArray(item.products) ? item.products : [item];
+        list.forEach(prod => {
+          const qty = Number(prod.quantity ?? prod.qty ?? 1);
+          if (prod.selected && qty > 0) {
+            const key = prod.id || prod.code || prod.name;
             if (!prodMap[key]) {
-              prodMap[key] = { name: prod.name, code: prod.code, qty: 0, proposalsCount: 0, revenue: 0 };
+              prodMap[key] = { name: prod.name, code: prod.code || '', qty: 0, proposalsCount: 0, revenue: 0 };
             }
-            prodMap[key].qty += Number(prod.qty) || 0;
+            const unitPrice = Number(prod.defaultPrice ?? prod.price ?? 0);
+            const unitDisc = Number(prod.defaultDiscount ?? prod.discount ?? 0);
+            prodMap[key].qty += qty;
             prodMap[key].proposalsCount += 1;
-            prodMap[key].revenue += (Number(prod.price) || 0) * (Number(prod.qty) || 0);
+            prodMap[key].revenue += (unitPrice - unitDisc) * qty;
           }
         });
       });
@@ -2675,7 +2685,7 @@ function updateAdminMetrics(proposals) {
           <div class="insight-row-item">
             <div class="insight-row-top">
               <span class="insight-row-name" style="font-size: 0.76rem;">
-                <span style="color: #f87171; font-weight: 800;">[${item.code}]</span>
+                ${item.code ? `<span style="color: #f87171; font-weight: 800;">[${item.code}]</span>` : ''}
                 <span>${item.name}</span>
               </span>
               <div class="insight-row-stats">
