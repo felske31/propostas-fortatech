@@ -2080,8 +2080,16 @@ function bindAuthModalEvents() {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const phone = document.getElementById('signup-phone').value;
-      const title = document.getElementById('signup-title').value;
       const password = document.getElementById('signup-password').value;
+
+      // Validação Obrigatória de Área Comercial (Múltipla Escolha)
+      const checkedAreas = Array.from(document.querySelectorAll('input[name="signup-area"]:checked')).map(el => el.value);
+      if (checkedAreas.length === 0) {
+        alert('Por favor, selecione de qual área você é (Inside Sales, Key Account, Projetos ou Outside Sales).');
+        return;
+      }
+
+      const title = checkedAreas.join(' / ');
       const submitBtn = formSignup.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -2089,11 +2097,11 @@ function bindAuthModalEvents() {
       }
 
       try {
-        const user = await V2Auth.signUp({ name, email, phone, title, password });
+        const user = await V2Auth.signUp({ name, email, phone, title, areas: checkedAreas, password });
         closeAuthModal();
         renderUserBadge();
         updateProposalsCountBadge();
-        showV2Toast(`Conta criada com sucesso! Olá, ${user.name}.`);
+        showV2Toast(`Conta criada com sucesso! Olá, ${user.name} (${title}).`);
       } catch (err) {
         alert(err.message || 'Falha ao criar conta.');
       } finally {
@@ -2219,6 +2227,11 @@ function bindProposalsManagerEvents() {
     statusSelect.addEventListener('change', () => renderProposalsGrid());
   }
 
+  const areaSelect = document.getElementById('proposals-filter-area');
+  if (areaSelect) {
+    areaSelect.addEventListener('change', () => renderProposalsGrid());
+  }
+
   const sellerSelect = document.getElementById('proposals-filter-seller');
   if (sellerSelect) {
     sellerSelect.addEventListener('change', () => renderProposalsGrid());
@@ -2238,7 +2251,7 @@ function openProposalsModal() {
     if (title) title.innerHTML = '📊 Gestão Central de Propostas Comerciais <span style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">VISÃO ADMIN</span>';
     if (adminMetrics) adminMetrics.style.display = 'grid';
     if (sellerFilterWrap) {
-      sellerFilterWrap.style.display = 'block';
+      sellerFilterWrap.style.display = 'flex';
       populateSellerFilterOptions();
     }
   } else {
@@ -2263,7 +2276,8 @@ function populateSellerFilterOptions() {
   const sellers = V2DB.getAllSellers();
   let html = '<option value="all">Todos os Vendedores</option>';
   sellers.forEach(s => {
-    html += `<option value="${s.id}">${s.name} (${s.email})</option>`;
+    const areaBadge = s.title ? ` — ${s.title}` : '';
+    html += `<option value="${s.id}">${s.name}${areaBadge}</option>`;
   });
   select.innerHTML = html;
 }
@@ -2275,9 +2289,10 @@ function renderProposalsGrid() {
 
   const query = document.getElementById('proposals-filter-query')?.value || '';
   const status = document.getElementById('proposals-filter-status')?.value || 'all';
+  const area = document.getElementById('proposals-filter-area')?.value || 'all';
   const sellerId = document.getElementById('proposals-filter-seller')?.value || 'all';
 
-  const proposals = V2DB.getProposals({ query, status, sellerId });
+  const proposals = V2DB.getProposals({ query, status, area, sellerId });
   const currentUser = V2Auth.getCurrentUser();
 
   // Atualiza métricas se for Admin
@@ -2319,8 +2334,9 @@ function renderProposalsGrid() {
             </div>
           </div>
 
-          <div style="margin-top: 12px; font-size: 0.78rem; color: #64748b;">
-            Vendedor: <strong style="color: #cbd5e1;">${p.userName || 'Consultor'}</strong>
+          <div style="margin-top: 12px; font-size: 0.78rem; color: #64748b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span>Vendedor: <strong style="color: #cbd5e1;">${p.userName || 'Consultor'}</strong></span>
+            ${p.userArea ? `<span style="background: rgba(229,9,20,0.14); color: #ff4d58; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem;">${p.userArea}</span>` : ''}
           </div>
         </div>
 

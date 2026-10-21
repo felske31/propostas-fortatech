@@ -11,8 +11,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=20261021_v2_fix">
-  <link rel="stylesheet" href="styles-v2.css?v=20261021_v2_fix">
+  <link rel="stylesheet" href="styles.css?v=20261021_areas">
+  <link rel="stylesheet" href="styles-v2.css?v=20261021_areas">
 </head>
 <body>
 
@@ -626,22 +626,16 @@
             <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
           </div>
           <button type="submit" class="auth-submit-btn">Entrar no Gerador de Propostas ➔</button>
-
-          <div class="auth-demo-hint">
-            <strong>🔑 Acesso de Administrador (Padrão):</strong><br>
-            • E-mail: <code style="color: #fff; user-select: all;">admin@fortatech.com.br</code><br>
-            • Senha: <code style="color: #fff; user-select: all;">admin</code>
-          </div>
         </form>
 
         <!-- FORMULÁRIO DE CADASTRO -->
         <form id="auth-form-signup" style="display: none;">
           <div class="auth-form-group">
-            <label>Seu Nome Completo</label>
+            <label>Seu Nome Completo *</label>
             <input type="text" id="signup-name" placeholder="Ex: Rodrigo Santos" required>
           </div>
           <div class="auth-form-group">
-            <label>Seu E-mail</label>
+            <label>Seu E-mail Corporativo *</label>
             <input type="email" id="signup-email" placeholder="rodrigo@grupoforta.com.br" required>
           </div>
           <div class="auth-form-group">
@@ -649,11 +643,28 @@
             <input type="text" id="signup-phone" placeholder="+55 41 99999-8888">
           </div>
           <div class="auth-form-group">
-            <label>Cargo / Função</label>
-            <input type="text" id="signup-title" placeholder="Ex: Consultor Técnico Undercar">
+            <label>Sua Área Comercial * (Obrigatório)</label>
+            <div class="area-choices-grid" id="signup-areas-container">
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Inside Sales">
+                <span class="area-choice-box">Inside Sales</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Key Account">
+                <span class="area-choice-box">Key Account</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Projetos">
+                <span class="area-choice-box">Projetos</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Outside Sales">
+                <span class="area-choice-box">Outside Sales</span>
+              </label>
+            </div>
           </div>
           <div class="auth-form-group">
-            <label>Crie sua Senha</label>
+            <label>Crie sua Senha *</label>
             <input type="password" id="signup-password" placeholder="Mínimo 4 caracteres" required minlength="4">
           </div>
           <button type="submit" class="auth-submit-btn">Criar Conta e Acessar ➔</button>
@@ -710,7 +721,14 @@
           <option value="rejected">✕ Recusadas</option>
         </select>
 
-        <div id="seller-filter-wrap" style="display: none;">
+        <div id="seller-filter-wrap" style="display: none; gap: 10px; align-items: center;">
+          <select class="filter-select" id="proposals-filter-area">
+            <option value="all">Todas as Áreas</option>
+            <option value="Inside Sales">Inside Sales</option>
+            <option value="Key Account">Key Account</option>
+            <option value="Projetos">Projetos</option>
+            <option value="Outside Sales">Outside Sales</option>
+          </select>
           <select class="filter-select" id="proposals-filter-seller">
             <option value="all">Todos os Vendedores</option>
           </select>
@@ -732,10 +750,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <!-- Scripts V2 -->
-  <script src="assets.js?v=20261021_firebase"></script>
-  <script src="catalog.js?v=20261021_firebase"></script>
-  <script src="embedded_styles.js?v=20261021_firebase"></script>
-  <script src="v2-auth-db.js?v=20261021_firebase"></script>
-  <script src="app-v2.js?v=20261021_firebase"></script>
+  <script src="assets.js?v=20261021_areas"></script>
+  <script src="catalog.js?v=20261021_areas"></script>
+  <script src="embedded_styles.js?v=20261021_areas"></script>
+  <script src="v2-auth-db.js?v=20261021_areas"></script>
+  <script src="app-v2.js?v=20261021_areas"></script>
 </body>
 </html>

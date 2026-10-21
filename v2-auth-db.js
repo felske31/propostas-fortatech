@@ -266,7 +266,8 @@ const V2Auth = {
       password: userData.password,
       phone: userData.phone || '',
       role: 'consultor',
-      title: userData.title || 'Consultor Comercial Undercar',
+      title: userData.title || 'Inside Sales',
+      areas: userData.areas || [userData.title || 'Inside Sales'],
       createdAt: new Date().toISOString()
     };
 
@@ -284,6 +285,7 @@ const V2Auth = {
         phone: newUser.phone,
         role: newUser.role,
         title: newUser.title,
+        areas: newUser.areas,
         createdAt: newUser.createdAt
       }).catch(e => console.warn('[Firestore Save User]', e.message));
     }
@@ -294,7 +296,8 @@ const V2Auth = {
       email: newUser.email,
       phone: newUser.phone,
       role: newUser.role,
-      title: newUser.title
+      title: newUser.title,
+      areas: newUser.areas
     };
 
     localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
@@ -344,6 +347,7 @@ const V2DB = {
         userName: user.name,
         userEmail: user.email,
         userPhone: user.phone || '',
+        userArea: user.title || '',
         clientName: proposalPayload.clientName || 'Cliente Sem Nome',
         clientCity: proposalPayload.clientCity || '',
         proposalNumber: proposalPayload.proposalNumber || ('PROP-' + new Date().getFullYear() + '/' + Math.floor(1000 + Math.random() * 9000)),
@@ -377,8 +381,13 @@ const V2DB = {
 
     if (user.role !== 'admin') {
       list = list.filter(p => p.userId === user.id || (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()));
-    } else if (filters.sellerId && filters.sellerId !== 'all') {
-      list = list.filter(p => p.userId === filters.sellerId);
+    } else {
+      if (filters.sellerId && filters.sellerId !== 'all') {
+        list = list.filter(p => p.userId === filters.sellerId);
+      }
+      if (filters.area && filters.area !== 'all') {
+        list = list.filter(p => (p.userArea || '').toLowerCase().includes(filters.area.toLowerCase()));
+      }
     }
 
     if (filters.status && filters.status !== 'all') {
