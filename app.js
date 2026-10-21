@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGlobalActions();
   initCatalogModal();
   initMobileNavigation();
+  initV2AuthAndProposals();
 });
 
 // Navegação Mobile (Alternar entre Editar e Visualizar Proposta)
@@ -1881,5 +1882,885 @@ function initCatalogModal() {
     }
   });
 }
+
+// ==========================================================================
+// V2 EXTENSION: AUTENTICAÇÃO, GESTÃO E EDIÇÃO DE PROPOSTAS SALVAS
+// ==========================================================================
+
+let currentEditingProposalId = null;
+
+function initV2AuthAndProposals() {
+  renderUserBadge();
+  bindAuthModalEvents();
+  bindProposalsManagerEvents();
+  updateProposalsCountBadge();
+}
+
+// 1. Renderiza a Badge de Usuário Logado ou Botão de Login
+function renderUserBadge() {
+  const container = document.getElementById('user-profile-badge');
+  if (!container) return;
+
+  const currentUser = V2Auth.getCurrentUser();
+
+  if (currentUser) {
+    closeAuthModal();
+    const isAdm = currentUser.role === 'admin';
+    const initial = (currentUser.name && currentUser.name.length > 0) ? currentUser.name.charAt(0).toUpperCase() : 'U';
+
+    container.innerHTML = `
+      <div class="user-pill">
+        <div class="user-avatar ${isAdm ? 'admin' : ''}">
+          ${isAdm ? '👑' : initial}
+        </div>
+        <div class="user-name-role">
+          <span class="user-name">${currentUser.name}</span>
+          <span class="user-role-tag ${isAdm ? 'admin' : ''}">
+            ${isAdm ? 'Administrador Geral' : (currentUser.title || 'Consultor Comercial')}
+          </span>
+        </div>
+        <button class="btn-logout" id="btn-logout" title="Sair da Conta (${currentUser.email})">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    // Atualiza dados do vendedor na proposta com o usuário logado
+    if (state.proposal && !currentEditingProposalId) {
+      state.proposal.sellerName = currentUser.name;
+      if (currentUser.phone) state.proposal.sellerPhone = currentUser.phone;
+      if (currentUser.email) state.proposal.sellerEmail = currentUser.email;
+      if (currentUser.title) state.proposal.sellerRole = currentUser.title;
+      populateFormFields();
+      renderProposalDocument();
+    }
+
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        if (confirm(`Deseja sair da conta de ${currentUser.name}?`)) {
+          V2Auth.logout();
+          cancelEditingProposal();
+          renderUserBadge();
+          updateProposalsCountBadge();
+          openAuthModal('login');
+          showV2Toast('Você saiu da sua conta.');
+        }
+      });
+    }
+  } else {
+    container.innerHTML = `
+      <button class="btn btn-outline btn-sm" id="btn-open-login-modal" style="display: flex; align-items: center; gap: 6px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span>Entrar / Criar Conta</span>
+      </button>
+    `;
+
+    const openBtn = document.getElementById('btn-open-login-modal');
+    if (openBtn) {
+      openBtn.addEventListener('click', () => openAuthModal('login'));
+    }
+
+    // Exibe a Tela de Login obrigatoriamente ao entrar sem sessão ativa
+    openAuthModal('login');
+  }
+}
+
+// 2. Atualiza contador de propostas no topo
+function updateProposalsCountBadge() {
+  const badge = document.getElementById('proposals-count-badge');
+  if (!badge) return;
+
+  const currentUser = V2Auth.getCurrentUser();
+  if (!currentUser) {
+    badge.textContent = '0';
+    badge.style.display = 'none';
+    return;
+  }
+
+  const list = V2DB.getProposals();
+  badge.textContent = list.length;
+  badge.style.display = 'inline-block';
+}
+
+// 3. Gerenciamento do Modal de Autenticação (Login / Cadastro)
+function openAuthModal(mode = 'login') {
+  const modal = document.getElementById('auth-modal-overlay');
+  if (!modal) return;
+
+  const tabLogin = document.getElementById('auth-tab-login');
+  const tabSignup = document.getElementById('auth-tab-signup');
+  const formLogin = document.getElementById('auth-form-login');
+  const formSignup = document.getElementById('auth-form-signup');
+
+  if (mode === 'login') {
+    tabLogin?.classList.add('active');
+    tabSignup?.classList.remove('active');
+    if (formLogin) formLogin.style.display = 'block';
+    if (formSignup) formSignup.style.display = 'none';
+  } else {
+    tabSignup?.classList.add('active');
+    tabLogin?.classList.remove('active');
+    if (formSignup) formSignup.style.display = 'block';
+    if (formLogin) formLogin.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('auth-modal-overlay');
+  if (modal) modal.style.display = 'none';
+}
+
+function bindAuthModalEvents() {
+  const modal = document.getElementById('auth-modal-overlay');
+  const closeBtn = document.getElementById('auth-modal-close');
+  const tabLogin = document.getElementById('auth-tab-login');
+  const tabSignup = document.getElementById('auth-tab-signup');
+  const formLogin = document.getElementById('auth-form-login');
+  const formSignup = document.getElementById('auth-form-signup');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      if (V2Auth.getCurrentUser()) closeAuthModal();
+    });
+  }
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal && V2Auth.getCurrentUser()) closeAuthModal();
+    });
+  }
+
+  if (tabLogin && tabSignup) {
+    tabLogin.addEventListener('click', () => openAuthModal('login'));
+    tabSignup.addEventListener('click', () => openAuthModal('signup'));
+  }
+
+  // Submit Login
+  if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
+      const submitBtn = formLogin.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Autenticando no Firebase...';
+      }
+
+      try {
+        const user = await V2Auth.login(email, pass);
+        closeAuthModal();
+        renderUserBadge();
+        updateProposalsCountBadge();
+        showV2Toast(`Bem-vindo de volta, ${user.name}!`);
+      } catch (err) {
+        alert(err.message || 'Falha ao autenticar.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Entrar no Gerador de Propostas ➔';
+        }
+      }
+    });
+  }
+
+  // Submit Cadastro
+  if (formSignup) {
+    formSignup.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const phone = document.getElementById('signup-phone').value;
+      const password = document.getElementById('signup-password').value;
+
+      // Validação Obrigatória de Área Comercial (Múltipla Escolha)
+      const checkedAreas = Array.from(document.querySelectorAll('input[name="signup-area"]:checked')).map(el => el.value);
+      if (checkedAreas.length === 0) {
+        alert('Por favor, selecione de qual área você é (Inside Sales, Key Account, Projetos ou Outside Sales).');
+        return;
+      }
+
+      const title = checkedAreas.join(' / ');
+      const submitBtn = formSignup.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Criando conta no Firebase...';
+      }
+
+      try {
+        const user = await V2Auth.signUp({ name, email, phone, title, areas: checkedAreas, password });
+        closeAuthModal();
+        renderUserBadge();
+        updateProposalsCountBadge();
+        showV2Toast(`Conta criada com sucesso! Olá, ${user.name} (${title}).`);
+      } catch (err) {
+        alert(err.message || 'Falha ao criar conta.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Criar Conta e Acessar ➔';
+        }
+      }
+    });
+  }
+}
+
+// 4. Salvar Proposta no Banco de Dados
+function saveCurrentProposal() {
+  const currentUser = V2Auth.getCurrentUser();
+  if (!currentUser) {
+    alert('Por favor, faça login ou crie sua conta para salvar suas propostas no sistema.');
+    openAuthModal('login');
+    return;
+  }
+
+  const totals = calculateTotals();
+
+  const proposalPayload = {
+    id: currentEditingProposalId || undefined,
+    clientName: state.client.name || 'Cliente Sem Razão Social',
+    clientCity: state.client.city || '',
+    proposalNumber: state.proposal.number || ('PROP-' + new Date().getFullYear() + '/0001'),
+    proposalDate: state.proposal.date || new Date().toISOString().split('T')[0],
+    totalValue: totals.finalTotal,
+    stateData: JSON.parse(JSON.stringify(state))
+  };
+
+  try {
+    const saved = V2DB.saveProposal(proposalPayload);
+    currentEditingProposalId = saved.id;
+    updateEditingBanner();
+    updateProposalsCountBadge();
+    showV2Toast(`Proposta ${saved.proposalNumber} salva com sucesso!`);
+  } catch (err) {
+    alert(err.message || 'Erro ao salvar proposta.');
+  }
+}
+
+function updateEditingBanner() {
+  const banner = document.getElementById('editing-banner');
+  const numSpan = document.getElementById('editing-prop-number');
+  const cliSpan = document.getElementById('editing-prop-client');
+  if (!banner || !numSpan) return;
+
+  if (currentEditingProposalId) {
+    numSpan.textContent = state.proposal.number || 'Proposta Ativa';
+    if (cliSpan) cliSpan.textContent = state.client.name || 'Cliente';
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function cancelEditingProposal() {
+  currentEditingProposalId = null;
+  updateEditingBanner();
+}
+
+// 5. Gerenciamento e Bindings do Painel de Propostas
+function bindProposalsManagerEvents() {
+  // Botão Salvar no Topo
+  const btnSave = document.getElementById('btn-save-proposal');
+  if (btnSave) {
+    btnSave.addEventListener('click', saveCurrentProposal);
+  }
+
+  // Ações do Banner de Edição
+  const btnSaveChanges = document.getElementById('btn-save-changes');
+  if (btnSaveChanges) btnSaveChanges.addEventListener('click', saveCurrentProposal);
+
+  const btnSaveAsNew = document.getElementById('btn-save-as-new');
+  if (btnSaveAsNew) {
+    btnSaveAsNew.addEventListener('click', () => {
+      currentEditingProposalId = null;
+      if (state.proposal) {
+        state.proposal.number = (state.proposal.number || 'PROP') + '-NOVA';
+        populateFormFields();
+      }
+      saveCurrentProposal();
+    });
+  }
+
+  const btnCancelEdit = document.getElementById('btn-cancel-edit');
+  if (btnCancelEdit) btnCancelEdit.addEventListener('click', cancelEditingProposal);
+
+  // Botão Abrir Histórico de Propostas
+  const btnOpenProposals = document.getElementById('btn-open-proposals-modal');
+  if (btnOpenProposals) {
+    btnOpenProposals.addEventListener('click', () => {
+      const currentUser = V2Auth.getCurrentUser();
+      if (!currentUser) {
+        openAuthModal('login');
+        return;
+      }
+      openProposalsModal();
+    });
+  }
+
+  // Fechar Modal de Propostas
+  const closeBtn = document.getElementById('proposals-modal-close');
+  const modal = document.getElementById('proposals-modal-overlay');
+  if (closeBtn) closeBtn.addEventListener('click', closeProposalsModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeProposalsModal();
+    });
+  }
+
+  // Filtros
+  const searchInput = document.getElementById('proposals-filter-query');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => renderProposalsGrid());
+  }
+
+  const statusSelect = document.getElementById('proposals-filter-status');
+  if (statusSelect) {
+    statusSelect.addEventListener('change', () => renderProposalsGrid());
+  }
+
+  const areaSelect = document.getElementById('proposals-filter-area');
+  if (areaSelect) {
+    areaSelect.addEventListener('change', () => renderProposalsGrid());
+  }
+
+  const sellerSelect = document.getElementById('proposals-filter-seller');
+  if (sellerSelect) {
+    sellerSelect.addEventListener('change', () => renderProposalsGrid());
+  }
+
+  // Botão expandir/recolher painéis de insights do Admin
+  const btnToggleDashboard = document.getElementById('btn-toggle-admin-dashboard');
+  if (btnToggleDashboard) {
+    btnToggleDashboard.addEventListener('click', () => {
+      const panels = document.getElementById('admin-insights-panels');
+      const label = document.getElementById('admin-dashboard-toggle-label');
+      if (!panels) return;
+      const isHidden = panels.style.display === 'none';
+      panels.style.display = isHidden ? 'grid' : 'none';
+      if (label) label.textContent = isHidden ? 'Ocultar Insights' : 'Mostrar Insights';
+    });
+  }
+}
+
+function openProposalsModal() {
+  const modal = document.getElementById('proposals-modal-overlay');
+  if (!modal) return;
+
+  const currentUser = V2Auth.getCurrentUser();
+  const title = document.getElementById('proposals-modal-title-text');
+  const adminMetrics = document.getElementById('admin-metrics-container');
+  const sellerFilterWrap = document.getElementById('seller-filter-wrap');
+  const btnToggleDashboard = document.getElementById('btn-toggle-admin-dashboard');
+
+  if (currentUser && currentUser.role === 'admin') {
+    if (title) title.innerHTML = '📊 Gestão Central de Propostas Comerciais <span style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">VISÃO ADMIN</span>';
+    if (adminMetrics) adminMetrics.style.display = 'block';
+    if (btnToggleDashboard) btnToggleDashboard.style.display = 'inline-flex';
+    if (sellerFilterWrap) {
+      sellerFilterWrap.style.display = 'flex';
+      populateSellerFilterOptions();
+    }
+  } else {
+    if (title) title.innerHTML = '📂 Minhas Propostas Geradas';
+    if (adminMetrics) adminMetrics.style.display = 'none';
+    if (btnToggleDashboard) btnToggleDashboard.style.display = 'none';
+    if (sellerFilterWrap) sellerFilterWrap.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+  renderProposalsGrid();
+}
+
+function closeProposalsModal() {
+  const modal = document.getElementById('proposals-modal-overlay');
+  if (modal) modal.style.display = 'none';
+}
+
+function populateSellerFilterOptions() {
+  const select = document.getElementById('proposals-filter-seller');
+  if (!select) return;
+
+  const sellers = V2DB.getAllSellers();
+  let html = '<option value="all">Todos os Vendedores</option>';
+  sellers.forEach(s => {
+    const areaBadge = s.title ? ` — ${s.title}` : '';
+    html += `<option value="${s.id}">${s.name}${areaBadge}</option>`;
+  });
+  select.innerHTML = html;
+}
+
+// 6. Renderização da Lista de Propostas Salvas
+function renderProposalsGrid() {
+  const container = document.getElementById('proposals-grid-container');
+  if (!container) return;
+
+  const query = document.getElementById('proposals-filter-query')?.value || '';
+  const status = document.getElementById('proposals-filter-status')?.value || 'all';
+  const area = document.getElementById('proposals-filter-area')?.value || 'all';
+  const sellerId = document.getElementById('proposals-filter-seller')?.value || 'all';
+
+  const proposals = V2DB.getProposals({ query, status, area, sellerId });
+  const currentUser = V2Auth.getCurrentUser();
+
+  // Atualiza métricas se for Admin
+  if (currentUser && currentUser.role === 'admin') {
+    updateAdminMetrics(proposals);
+  }
+
+  if (proposals.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">Nenhuma proposta encontrada</div>
+        <div style="font-size: 0.85rem; margin-top: 4px;">Clique em "Salvar Proposta" no topo para arquivar seus orçamentos no sistema.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = proposals.map(p => {
+    const isOwner = currentUser && (currentUser.id === p.userId || currentUser.role === 'admin');
+    const isCurrentlyEditing = currentEditingProposalId === p.id;
+
+    return `
+      <div class="proposal-item-card" style="${isCurrentlyEditing ? 'border-color: #22c55e; box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);' : ''}">
+        <div>
+          <div class="pic-header">
+            <div>
+              <div class="pic-number">${p.proposalNumber}</div>
+              <div class="pic-client-name">${p.clientName}</div>
+              ${p.clientCity ? `<div class="pic-client-city">📍 ${p.clientCity}</div>` : ''}
+            </div>
+            <div>
+              ${getStatusBadgeHtml(p.status, p.id)}
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; font-size: 0.78rem; color: #64748b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span>Vendedor: <strong style="color: #cbd5e1;">${p.userName || 'Consultor'}</strong></span>
+            ${p.userArea ? `<span style="background: rgba(229,9,20,0.14); color: #ff4d58; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem;">${p.userArea}</span>` : ''}
+          </div>
+        </div>
+
+        <div>
+          <div class="pic-meta-row">
+            <span>Data: ${formatDateExtenso(p.proposalDate)}</span>
+            <span class="pic-total-val">${formatBRL(p.totalValue)}</span>
+          </div>
+
+          <div class="pic-actions">
+            <button class="btn btn-primary btn-sm btn-edit-proposal" data-id="${p.id}" title="Carregar no editor para alterar itens e preços">
+              ✏️ Editar
+            </button>
+            <button class="btn btn-secondary btn-sm btn-duplicate-proposal" data-id="${p.id}" title="Duplicar proposta como nova">
+              📋 Duplicar
+            </button>
+            ${isOwner ? `
+              <button class="btn btn-secondary btn-sm btn-delete-proposal" data-id="${p.id}" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Excluir proposta">
+                🗑️
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Binds dos botões dos cards
+  container.querySelectorAll('.btn-edit-proposal').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      loadProposalForEditing(id);
+    });
+  });
+
+  container.querySelectorAll('.btn-duplicate-proposal').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      V2DB.duplicateProposal(id);
+      renderProposalsGrid();
+      updateProposalsCountBadge();
+      showV2Toast('Proposta duplicada com sucesso!');
+    });
+  });
+
+  container.querySelectorAll('.btn-delete-proposal').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (confirm('Tem certeza que deseja excluir esta proposta do histórico?')) {
+        V2DB.deleteProposal(id);
+        if (currentEditingProposalId === id) {
+          cancelEditingProposal();
+        }
+        renderProposalsGrid();
+        updateProposalsCountBadge();
+        showV2Toast('Proposta excluída.');
+      }
+    });
+  });
+
+  container.querySelectorAll('.status-select-action').forEach(select => {
+    select.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-id');
+      const newStatus = e.target.value;
+      V2DB.updateStatus(id, newStatus);
+      renderProposalsGrid();
+      showV2Toast('Status da proposta atualizado.');
+    });
+  });
+}
+
+function getStatusBadgeHtml(status, id) {
+  const map = {
+    draft: { label: 'Rascunho', class: 'status-draft' },
+    sent: { label: 'Enviada', class: 'status-sent' },
+    approved: { label: 'Aprovada', class: 'status-approved' },
+    rejected: { label: 'Recusada', class: 'status-rejected' }
+  };
+  const s = map[status] || map.sent;
+
+  return `
+    <select class="status-select-action status-badge ${s.class}" data-id="${id}" style="cursor: pointer; border: none; font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; font-weight: 800;">
+      <option value="sent" ${status === 'sent' ? 'selected' : ''}>Enviada</option>
+      <option value="draft" ${status === 'draft' ? 'selected' : ''}>Rascunho</option>
+      <option value="approved" ${status === 'approved' ? 'selected' : ''}>✓ Aprovada</option>
+      <option value="rejected" ${status === 'rejected' ? 'selected' : ''}>✕ Recusada</option>
+    </select>
+  `;
+}
+
+function updateAdminMetrics(proposals) {
+  const totalCountEl = document.getElementById('metric-total-count');
+  const statusBreakdownEl = document.getElementById('metric-status-breakdown');
+  const totalValEl = document.getElementById('metric-total-value');
+  const avgTicketEl = document.getElementById('metric-avg-ticket');
+  const approvedValEl = document.getElementById('metric-approved-value');
+  const winRateEl = document.getElementById('metric-win-rate');
+  const totalDiscountEl = document.getElementById('metric-total-discount');
+  const avgDiscountPctEl = document.getElementById('metric-avg-discount-pct');
+
+  if (!totalCountEl) return;
+
+  // 1. KPIs baseados nas propostas filtradas atualmente
+  const totalCount = proposals.length;
+  let totalSum = 0;
+  let approvedSum = 0;
+  let approvedCount = 0;
+  let sentCount = 0;
+  let draftCount = 0;
+  let rejectedCount = 0;
+  let totalDiscountSum = 0;
+  let totalOriginalSum = 0;
+
+  proposals.forEach(p => {
+    const val = p.totalValue || 0;
+    totalSum += val;
+
+    if (p.status === 'approved') {
+      approvedSum += val;
+      approvedCount++;
+    } else if (p.status === 'rejected') {
+      rejectedCount++;
+    } else if (p.status === 'draft') {
+      draftCount++;
+    } else {
+      sentCount++;
+    }
+
+    // Cálculo de descontos concedidos na proposta
+    if (p.stateData && p.stateData.catalog) {
+      let propOriginal = 0;
+      p.stateData.catalog.forEach(cat => {
+        cat.products.forEach(prod => {
+          if (prod.selected && prod.qty > 0) {
+            propOriginal += (prod.price || 0) * prod.qty;
+          }
+        });
+      });
+      totalOriginalSum += propOriginal;
+      const discVal = p.discountValue || 0;
+      if (discVal > 0) {
+        totalDiscountSum += discVal;
+      } else if (propOriginal > val && val > 0) {
+        totalDiscountSum += (propOriginal - val);
+      }
+    }
+  });
+
+  const avgTicket = totalCount > 0 ? (totalSum / totalCount) : 0;
+  const winRate = totalCount > 0 ? ((approvedCount / totalCount) * 100) : 0;
+  const avgDiscPct = totalOriginalSum > 0 ? ((totalDiscountSum / totalOriginalSum) * 100) : 0;
+
+  totalCountEl.textContent = totalCount;
+  if (statusBreakdownEl) {
+    statusBreakdownEl.innerHTML = `<span style="color:#60a5fa;">${sentCount} env</span> • <span style="color:#4ade80;">${approvedCount} aprov</span> • <span style="color:#f87171;">${rejectedCount} rec</span> • <span>${draftCount} rasc</span>`;
+  }
+  if (totalValEl) totalValEl.textContent = formatBRL(totalSum);
+  if (avgTicketEl) avgTicketEl.textContent = formatBRL(avgTicket);
+  if (approvedValEl) approvedValEl.textContent = formatBRL(approvedSum);
+  if (winRateEl) winRateEl.textContent = `${winRate.toFixed(1)}% (${approvedCount}/${totalCount})`;
+  if (totalDiscountEl) totalDiscountEl.textContent = formatBRL(totalDiscountSum);
+  if (avgDiscountPctEl) avgDiscountPctEl.textContent = `${avgDiscPct.toFixed(1)}%`;
+
+  // 2. Painéis de Insights (usamos todas as propostas do banco para o comparativo entre Áreas, e propostas filtradas para Vendedores/Produtos)
+  const allProposals = V2DB.getProposals({});
+  const allUsers = V2DB.getAllSellers();
+  const userAreaLookup = {};
+  allUsers.forEach(u => {
+    if (u.id && u.title) userAreaLookup[u.id] = u.title;
+  });
+
+  // 2A. Desempenho por Área Comercial (4 áreas oficiais)
+  const officialAreas = ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
+  const areaStats = {};
+  officialAreas.forEach(a => {
+    areaStats[a] = { count: 0, value: 0, approved: 0 };
+  });
+
+  allProposals.forEach(p => {
+    const areaName = p.userArea || userAreaLookup[p.userId] || 'Outros';
+    if (!areaStats[areaName]) {
+      areaStats[areaName] = { count: 0, value: 0, approved: 0 };
+    }
+    areaStats[areaName].count++;
+    areaStats[areaName].value += (p.totalValue || 0);
+    if (p.status === 'approved') areaStats[areaName].approved++;
+  });
+
+  const maxAreaCount = Math.max(1, ...Object.values(areaStats).map(s => s.count));
+  const currentAreaFilter = document.getElementById('proposals-filter-area')?.value || 'all';
+  const areasListEl = document.getElementById('insight-areas-list');
+
+  if (areasListEl) {
+    const areaColors = {
+      'Inside Sales': '#3b82f6',
+      'Key Account': '#a855f7',
+      'Projetos': '#f59e0b',
+      'Outside Sales': '#22c55e'
+    };
+
+    const sortedAreas = Object.keys(areaStats).sort((a, b) => areaStats[b].count - areaStats[a].count || areaStats[b].value - areaStats[a].value);
+
+    areasListEl.innerHTML = sortedAreas.map(areaName => {
+      const st = areaStats[areaName];
+      const pctWidth = Math.round((st.count / maxAreaCount) * 100);
+      const sharePct = allProposals.length > 0 ? Math.round((st.count / allProposals.length) * 100) : 0;
+      const barColor = areaColors[areaName] || '#64748b';
+      const isSelected = currentAreaFilter === areaName;
+
+      return `
+        <div class="insight-row-item clickable-insight" data-area="${areaName}" style="${isSelected ? 'border-color: #E50914; background: rgba(229, 9, 20, 0.12);' : ''}" title="Clique para filtrar propostas da área ${areaName}">
+          <div class="insight-row-top">
+            <span class="insight-row-name">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${barColor}; display: inline-block;"></span>
+              ${areaName}
+              ${isSelected ? '<span style="font-size:0.65rem; color:#ff4d58; font-weight:800;">(FILTRADO)</span>' : ''}
+            </span>
+            <div class="insight-row-stats">
+              <span style="color: #94a3b8; font-weight: 600;">${formatBRL(st.value)}</span>
+              <span class="insight-badge-count">${st.count} prop (${sharePct}%)</span>
+            </div>
+          </div>
+          <div class="insight-progress-bar">
+            <div class="insight-progress-fill" style="width: ${pctWidth}%; background: ${barColor};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Clique na Área filtra automaticamente (ou limpa o filtro se clicar novamente)
+    areasListEl.querySelectorAll('.clickable-insight').forEach(row => {
+      row.addEventListener('click', () => {
+        const clickedArea = row.getAttribute('data-area');
+        const areaSelect = document.getElementById('proposals-filter-area');
+        if (areaSelect) {
+          areaSelect.value = (areaSelect.value === clickedArea) ? 'all' : clickedArea;
+          renderProposalsGrid();
+        }
+      });
+    });
+  }
+
+  // 2B. Ranking de Consultores / Vendedores
+  const sellersListEl = document.getElementById('insight-sellers-list');
+  if (sellersListEl) {
+    const sellerMap = {};
+    proposals.forEach(p => {
+      const sKey = p.userId || p.userName || 'desconhecido';
+      const sName = p.userName || 'Consultor';
+      const sArea = p.userArea || userAreaLookup[p.userId] || '';
+      if (!sellerMap[sKey]) {
+        sellerMap[sKey] = { name: sName, area: sArea, count: 0, value: 0, approvedCount: 0 };
+      }
+      sellerMap[sKey].count++;
+      sellerMap[sKey].value += (p.totalValue || 0);
+      if (p.status === 'approved') sellerMap[sKey].approvedCount++;
+    });
+
+    const sortedSellers = Object.values(sellerMap).sort((a, b) => b.value - a.value || b.count - a.count);
+    const maxSellerVal = Math.max(1, ...sortedSellers.map(s => s.value));
+
+    if (sortedSellers.length === 0) {
+      sellersListEl.innerHTML = `<div style="color: #64748b; font-size: 0.78rem; text-align: center; padding: 18px 0;">Nenhum dado para o filtro atual.</div>`;
+    } else {
+      sellersListEl.innerHTML = sortedSellers.map((s, idx) => {
+        const pct = Math.round((s.value / maxSellerVal) * 100);
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`;
+        return `
+          <div class="insight-row-item">
+            <div class="insight-row-top">
+              <span class="insight-row-name">
+                <span>${medal}</span>
+                <span>${s.name}</span>
+                ${s.area ? `<span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.06); color: #94a3b8;">${s.area}</span>` : ''}
+              </span>
+              <div class="insight-row-stats">
+                <span style="color: #22c55e; font-weight: 700;">${formatBRL(s.value)}</span>
+                <span class="insight-badge-count">${s.count} prop</span>
+              </div>
+            </div>
+            <div class="insight-progress-bar">
+              <div class="insight-progress-fill" style="width: ${pct}%; background: linear-gradient(90deg, #E50914, #f59e0b);"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2C. Equipamentos Mais Cotados nas Propostas
+  const productsListEl = document.getElementById('insight-products-list');
+  if (productsListEl) {
+    const prodMap = {};
+    proposals.forEach(p => {
+      if (!p.stateData || !p.stateData.catalog) return;
+      p.stateData.catalog.forEach(cat => {
+        cat.products.forEach(prod => {
+          if (prod.selected && prod.qty > 0) {
+            const key = prod.code || prod.name;
+            if (!prodMap[key]) {
+              prodMap[key] = { name: prod.name, code: prod.code, qty: 0, proposalsCount: 0, revenue: 0 };
+            }
+            prodMap[key].qty += Number(prod.qty) || 0;
+            prodMap[key].proposalsCount += 1;
+            prodMap[key].revenue += (Number(prod.price) || 0) * (Number(prod.qty) || 0);
+          }
+        });
+      });
+    });
+
+    const sortedProds = Object.values(prodMap).sort((a, b) => b.qty - a.qty || b.proposalsCount - a.proposalsCount).slice(0, 6);
+    const maxProdQty = Math.max(1, ...sortedProds.map(item => item.qty));
+
+    if (sortedProds.length === 0) {
+      productsListEl.innerHTML = `<div style="color: #64748b; font-size: 0.78rem; text-align: center; padding: 18px 0;">Nenhum equipamento cotado nas propostas filtradas.</div>`;
+    } else {
+      productsListEl.innerHTML = sortedProds.map(item => {
+        const pct = Math.round((item.qty / maxProdQty) * 100);
+        return `
+          <div class="insight-row-item">
+            <div class="insight-row-top">
+              <span class="insight-row-name" style="font-size: 0.76rem;">
+                <span style="color: #f87171; font-weight: 800;">[${item.code}]</span>
+                <span>${item.name}</span>
+              </span>
+              <div class="insight-row-stats">
+                <span style="color: #94a3b8; font-size: 0.72rem;">em ${item.proposalsCount} prop</span>
+                <span class="insight-badge-count" style="background: rgba(34, 197, 94, 0.15); color: #4ade80;">${item.qty} un.</span>
+              </div>
+            </div>
+            <div class="insight-progress-bar">
+              <div class="insight-progress-fill" style="width: ${pct}%; background: #22c55e;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+// 7. CARREGAR PROPOSTA NO GERADOR PARA EDIÇÃO
+function loadProposalForEditing(id) {
+  const prop = V2DB.getProposalById(id);
+  if (!prop || !prop.stateData) {
+    alert('Não foi possível carregar os dados desta proposta.');
+    return;
+  }
+
+  // Restaura o estado da proposta completo
+  state.client = JSON.parse(JSON.stringify(prop.stateData.client || {}));
+  state.proposal = JSON.parse(JSON.stringify(prop.stateData.proposal || {}));
+  state.terms = JSON.parse(JSON.stringify(prop.stateData.terms || {}));
+  state.company = JSON.parse(JSON.stringify(prop.stateData.company || {}));
+  state.catalog = JSON.parse(JSON.stringify(prop.stateData.catalog || []));
+  state.services = JSON.parse(JSON.stringify(prop.stateData.services || []));
+
+  currentEditingProposalId = prop.id;
+
+  // Atualiza os formulários e o documento renderizado
+  populateFormFields();
+  renderProductsEditor();
+  renderServicesEditor();
+  renderProposalDocument();
+  updateEditingBanner();
+
+  closeProposalsModal();
+  showV2Toast(`Proposta ${prop.proposalNumber} carregada no editor! Você já pode alterar qualquer item.`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Toast Notifier Rápido
+function showV2Toast(msg) {
+  let toast = document.getElementById('v2-toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'v2-toast-notification';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #141824;
+      border: 1px solid #E50914;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(20px);
+    `;
+    document.body.appendChild(toast);
+  }
+
+  toast.innerHTML = `<span>✓</span> <span>${msg}</span>`;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+  }, 3500);
+}
+
 
 

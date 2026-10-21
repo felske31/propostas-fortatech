@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerador de Propostas Comerciais | Forta Tech</title>
+  <title>Portal de Propostas Comerciais | Forta Tech</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=20261021_difal">
+  <link rel="stylesheet" href="styles.css?v=20261021_prod">
+  <link rel="stylesheet" href="styles-v2.css?v=20261021_prod">
 </head>
 <body>
 
@@ -21,25 +22,33 @@
       <div class="logo-badge" style="display: flex; align-items: center; gap: 14px;">
         <img src="images/forta_logo_official.png" alt="Forta Tech Logo" onerror="this.src='https://fortatech.com.br/cdn/shop/files/logo_forta_tech.png?v=1723114776&width=600'" style="height: 38px; width: auto; object-fit: contain; display: block;">
       </div>
-      <span class="app-tagline">Gerador de Propostas Comerciais 2.0</span>
+      <span class="app-tagline">Portal Comercial 2.0 • Login & Gestão de Propostas</span>
     </div>
 
     <div class="header-actions">
-      <button class="btn btn-secondary btn-sm" id="btn-reset-template" title="Restaurar dados originais de demonstração">
+      <button class="btn btn-secondary btn-sm" id="btn-open-proposals-modal" title="Ver propostas geradas no banco de dados">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="1 4 1 10 7 10"></polyline>
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
         </svg>
-        Restaurar Modelo
+        <span id="label-proposals-btn">Minhas Propostas</span>
+        <span class="badge-count" id="proposals-count-badge" style="display: none;">0</span>
       </button>
 
-      <button class="btn btn-secondary btn-sm" id="btn-export-html" title="Baixar arquivo HTML avulso para envio">
+      <button class="btn btn-success btn-sm" id="btn-save-proposal" title="Salvar proposta atual no banco de dados">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
         </svg>
-        Exportar HTML
+        <span id="label-save-btn">Salvar Proposta</span>
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-reset-template" title="Iniciar uma nova proposta limpa">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nova Proposta
       </button>
 
       <button class="btn btn-primary btn-sm" id="btn-print-pdf" title="Gerar PDF ou Imprimir Proposta">
@@ -48,10 +57,26 @@
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
           <rect x="6" y="14" width="12" height="8"></rect>
         </svg>
-        Imprimir / Salvar em PDF
+        Imprimir / PDF
       </button>
+
+      <!-- Pill do Usuário Logado -->
+      <div class="user-profile-badge" id="user-profile-badge"></div>
     </div>
   </header>
+
+  <!-- Banner Informativo de Proposta em Edição -->
+  <div class="editing-banner" id="editing-banner" style="display: none;">
+    <div class="editing-info">
+      <span class="editing-tag">MODO EDIÇÃO</span>
+      <span>Você está editando a proposta <strong id="editing-prop-number" style="color: #fff;"></strong> (<span id="editing-prop-client" style="color: #cbd5e1;"></span>)</span>
+    </div>
+    <div class="editing-actions">
+      <button class="btn btn-success btn-sm" id="btn-save-changes">✓ Atualizar Proposta</button>
+      <button class="btn btn-secondary btn-sm" id="btn-save-as-new">Salvar como Nova Cópia</button>
+      <button class="btn btn-secondary btn-sm" id="btn-cancel-edit" style="color: #94a3b8;">✕ Fechar Edição</button>
+    </div>
+  </div>
 
   <!-- Barra de Navegação Mobile (Alternar entre Editar e Visualizar Proposta) -->
   <div class="mobile-nav-bar" id="mobile-nav-bar">
@@ -572,10 +597,215 @@
     </button>
   </div>
 
+  <!-- TELA / PORTAL DE LOGIN E CRIAÇÃO DE CONTA (Obrigatório para gerar propostas) -->
+  <div class="auth-modal-overlay" id="auth-modal-overlay" style="display: flex;">
+    <div class="auth-modal-card">
+      <div class="auth-modal-header">
+        <button class="auth-close-btn" id="auth-modal-close" type="button" style="display: none;">&times;</button>
+        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+          <img src="images/forta_logo_official.png" alt="Forta Tech" onerror="this.src='https://fortatech.com.br/cdn/shop/files/logo_forta_tech.png?v=1723114776&width=600'" style="height: 36px; width: auto; object-fit: contain;">
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">Portal Comercial Forta Tech</h3>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 6px 0 0;">Entre na sua conta ou cadastre-se para emitir e gerenciar propostas</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="auth-tab-login" type="button">Entrar na Conta</button>
+        <button class="auth-tab-btn" id="auth-tab-signup" type="button">Criar Minha Conta</button>
+      </div>
+
+      <div class="auth-form-body">
+        <!-- FORMULÁRIO DE LOGIN -->
+        <form id="auth-form-login">
+          <div class="auth-form-group">
+            <label>E-mail de Acesso</label>
+            <input type="email" id="login-email" placeholder="seu.email@grupoforta.com.br" required autocomplete="username">
+          </div>
+          <div class="auth-form-group">
+            <label>Senha</label>
+            <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="auth-submit-btn">Entrar no Gerador de Propostas ➔</button>
+        </form>
+
+        <!-- FORMULÁRIO DE CADASTRO -->
+        <form id="auth-form-signup" style="display: none;">
+          <div class="auth-form-group">
+            <label>Seu Nome Completo *</label>
+            <input type="text" id="signup-name" placeholder="Ex: Rodrigo Santos" required>
+          </div>
+          <div class="auth-form-group">
+            <label>Seu E-mail Corporativo *</label>
+            <input type="email" id="signup-email" placeholder="rodrigo@grupoforta.com.br" required>
+          </div>
+          <div class="auth-form-group">
+            <label>Seu WhatsApp Comercial</label>
+            <input type="text" id="signup-phone" placeholder="+55 41 99999-8888">
+          </div>
+          <div class="auth-form-group">
+            <label>Sua Área Comercial * (Obrigatório)</label>
+            <div class="area-choices-grid" id="signup-areas-container">
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Inside Sales">
+                <span class="area-choice-box">Inside Sales</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Key Account">
+                <span class="area-choice-box">Key Account</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Projetos">
+                <span class="area-choice-box">Projetos</span>
+              </label>
+              <label class="area-choice-card">
+                <input type="checkbox" name="signup-area" value="Outside Sales">
+                <span class="area-choice-box">Outside Sales</span>
+              </label>
+            </div>
+          </div>
+          <div class="auth-form-group">
+            <label>Crie sua Senha *</label>
+            <input type="password" id="signup-password" placeholder="Mínimo 4 caracteres" required minlength="4">
+          </div>
+          <button type="submit" class="auth-submit-btn">Criar Conta e Acessar ➔</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DO HISTÓRICO DE PROPOSTAS COMERCIAIS & DASHBOARD ADMIN -->
+  <div class="proposals-modal-overlay" id="proposals-modal-overlay">
+    <div class="proposals-modal-card">
+      <div class="proposals-modal-header">
+        <div class="proposals-modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span id="proposals-modal-title-text">Histórico de Propostas Comerciais</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="btn btn-secondary btn-sm" id="btn-toggle-admin-dashboard" type="button" style="display: none; font-size: 0.78rem; padding: 6px 12px;">
+            📊 Recolher / Expandir Dashboard
+          </button>
+          <button class="auth-close-btn" id="proposals-modal-close" type="button" style="position: static; font-size: 1.8rem; line-height: 1;">&times;</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD EXECUTIVO DO ADMINISTRADOR (Visível somente para perfil admin) -->
+      <div class="admin-dashboard-wrapper" id="admin-metrics-container" style="display: none;">
+        <!-- Linha 1: 4 KPIs Executivos -->
+        <div class="admin-kpi-grid">
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Total de Propostas Emitidas</div>
+            <div class="metric-stat-value" id="metric-total-count">0</div>
+            <div class="metric-stat-sub" id="metric-status-breakdown">0 enviadas • 0 rascunhos</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Volume Total em Propostas (Pipeline)</div>
+            <div class="metric-stat-value" id="metric-total-value">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-avg-ticket">Ticket Médio: R$ 0,00</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Propostas Aprovadas (Fechadas)</div>
+            <div class="metric-stat-value" style="color: #22c55e;" id="metric-approved-value">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-win-rate" style="color: #4ade80;">Conversão: 0% (0 ganhas)</div>
+          </div>
+          <div class="metric-stat-box">
+            <div class="metric-stat-label">Descontos Concedidos</div>
+            <div class="metric-stat-value" style="color: #f59e0b;" id="metric-total-discount">R$ 0,00</div>
+            <div class="metric-stat-sub" id="metric-avg-discount-pct">Média de desconto: 0%</div>
+          </div>
+        </div>
+
+        <!-- Linha 2: 3 Painéis de Insights (Por Área, Top Vendedores, Top Equipamentos) -->
+        <div class="admin-insights-grid" id="admin-insights-panels">
+          <!-- Painel 1: Quantidade e Volume por Área Comercial -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>🏢 Desempenho por Área Comercial</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Clique para filtrar</span>
+            </div>
+            <div class="insight-panel-body" id="insight-areas-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Painel 2: Ranking de Consultores / Vendedores -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>🏆 Ranking de Vendedores</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Volume & Conversão</span>
+            </div>
+            <div class="insight-panel-body" id="insight-sellers-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Painel 3: Top Equipamentos Mais Cotados -->
+          <div class="insight-panel-card">
+            <div class="insight-panel-title">
+              <span>⚙️ Equipamentos Mais Cotados</span>
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Demanda de Catálogo</span>
+            </div>
+            <div class="insight-panel-body" id="insight-products-list">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros e Busca -->
+      <div class="proposals-filter-bar">
+        <div class="filter-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="proposals-filter-query" placeholder="Buscar por cliente, cidade ou número da proposta...">
+        </div>
+
+        <select class="filter-select" id="proposals-filter-status">
+          <option value="all">Todos os Status</option>
+          <option value="sent">Enviadas</option>
+          <option value="draft">Rascunhos</option>
+          <option value="approved">✓ Aprovadas</option>
+          <option value="rejected">✕ Recusadas</option>
+        </select>
+
+        <div id="seller-filter-wrap" style="display: none; gap: 10px; align-items: center;">
+          <select class="filter-select" id="proposals-filter-area">
+            <option value="all">Todas as Áreas</option>
+            <option value="Inside Sales">Inside Sales</option>
+            <option value="Key Account">Key Account</option>
+            <option value="Projetos">Projetos</option>
+            <option value="Outside Sales">Outside Sales</option>
+          </select>
+          <select class="filter-select" id="proposals-filter-seller">
+            <option value="all">Todos os Vendedores</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grid com a lista de cards de propostas -->
+      <div class="proposals-list-body">
+        <div class="proposals-grid" id="proposals-grid-container">
+          <!-- Renderizado dinamicamente pelo app-v2.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Firebase Cloud SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
   <!-- Scripts -->
-  <script src="assets.js?v=20261021_difal"></script>
-  <script src="catalog.js?v=20261021_difal"></script>
-  <script src="embedded_styles.js?v=20261021_difal"></script>
-  <script src="app.js?v=20261021_difal"></script>
+  <script src="assets.js?v=20261021_prod"></script>
+  <script src="catalog.js?v=20261021_prod"></script>
+  <script src="embedded_styles.js?v=20261021_prod"></script>
+  <script src="v2-auth-db.js?v=20261021_prod"></script>
+  <script src="app.js?v=20261021_prod"></script>
 </body>
 </html>
