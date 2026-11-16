@@ -1,0 +1,147 @@
+rules_version = '2';
+// Modelo: perfis privados em fortatech_users/{uid}; papéis confiáveis em
+// fortatech_access/{uid}, escritos SOMENTE pelo Admin SDK/console.
+// Perfil: id/email/role/createdAt imutáveis; name<=200, phone<=80, title<=400,
+// areas: até 4 áreas oficiais, managedArea opcional e imutável.
+// Proposta: proprietário e identidade imutáveis; accessAreas imutável;
+// stateJson contém o documento comercial serializado (máximo 750 KB).
+// Datas legadas ISO são preservadas; savedAt é o timestamp do servidor.
+// Todos os estados draft/sent/approved/rejected podem transitar entre si.
+// Registros legados devem ser migrados ANTES de ativar estas regras.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null && request.auth.token.email is string
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+    function uidUnchanged(data) {
+      return data.userId == request.auth.uid;
+    }
+    function uidNotModified(data) {
+      return data.userId == resource.data.userId;
+    }
+    function accessPath() {
+      return /databases/$(database)/documents/fortatech_access/$(request.auth.uid);
+    }
+    function hasTrustedRole() {
+      return isAuthenticated() && request.auth.token.email_verified == true
+        && exists(accessPath())
+        && get(accessPath()).data.get('validAfter', 0) is int
+        && request.auth.token.auth_time >= get(accessPath()).data.validAfter;
+    }
+    function isAdmin() {
+      return hasTrustedRole() && get(accessPath()).data.get('role', '') == 'admin';
+    }
+    function manages(data) {
+      return hasTrustedRole() && get(accessPath()).data.get('role', '') == 'gestor'
+        && data.get('accessAreas', []).hasAny([get(accessPath()).data.get('area', '')]);
+    }
+    function mayManage(data) {
+      return isOwner(data.userId) || isAdmin() || manages(data);
+    }
+    function bounded(value, maximum) {
+      return value is string && value.size() <= maximum;
+    }
+    function isoDate(value) {
+      return bounded(value, 35)
+        && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.*Z$');
+    }
+    function validAreas(areas) {
+      return areas is list && areas.size() <= 4
+        && areas.hasOnly(['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'])
+        && areas.toSet().size() == areas.size();
+    }
+    function isValidUser(d, uid) {
+      return d.keys().hasAll(['id', 'name', 'email', 'phone', 'role', 'title', 'areas', 'createdAt'])
+        && d.keys().hasOnly(['id', 'name', 'email', 'phone', 'role', 'title', 'areas', 'createdAt', 'managedArea'])
+        && d.id == uid
+        && d.email == request.auth.token.email
+        && bounded(d.email, 254)
+        && bounded(d.name, 200) && d.name.size() >= 2
+        && bounded(d.phone, 80)
+        && bounded(d.title, 400)
+        && d.role in ['consultor', 'gestor', 'admin']
+        && validAreas(d.areas)
+        && (d.get('managedArea', null) == null
+          || d.managedArea in ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'])
+        && isoDate(d.createdAt);
+    }
+    function isValidDirectory(d, uid) {
+      let profile = get(/databases/$(database)/documents/fortatech_users/$(uid)).data;
+      return d.keys().hasAll(['id', 'name', 'title', 'areas'])
+        && d.keys().hasOnly(['id', 'name', 'title', 'areas'])
+        && d.id == uid && bounded(d.name, 200) && d.name.size() >= 2
+        && bounded(d.title, 400) && validAreas(d.areas)
+        && d.name == profile.name && d.title == profile.title && d.areas == profile.areas;
+    }
+    function isValidProposal(d, proposalId) {
+      return d.keys().hasAll(['id', 'userId', 'userName', 'userEmail', 'userPhone',
+          'userArea', 'accessAreas', 'clientName', 'clientCity', 'proposalNumber',
+          'proposalDate', 'totalValue', 'status', 'stateJson', 'createdAt', 'updatedAt', 'savedAt'])
+        && d.keys().hasOnly(['id', 'userId', 'userName', 'userEmail', 'userPhone',
+          'userArea', 'accessAreas', 'clientName', 'clientCity', 'proposalNumber',
+          'proposalDate', 'totalValue', 'status', 'stateJson', 'createdAt', 'updatedAt', 'savedAt'])
+        && d.id == proposalId && bounded(d.id, 150)
+        && bounded(d.userId, 128) && d.userId.size() > 0
+        && bounded(d.userName, 200) && d.userName.size() >= 2
+        && bounded(d.userEmail, 254) && d.userEmail.size() > 0
+        && bounded(d.userPhone, 80) && bounded(d.userArea, 400)
+        && validAreas(d.accessAreas)
+        && bounded(d.clientName, 300) && d.clientName.size() > 0
+        && bounded(d.clientCity, 200)
+        && bounded(d.proposalNumber, 150) && d.proposalNumber.size() > 0
+        && bounded(d.proposalDate, 10)
+        && d.proposalDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && d.totalValue is number && d.totalValue >= 0 && d.totalValue <= 1000000000
+        && d.status in ['draft', 'sent', 'approved', 'rejected']
+        && bounded(d.stateJson, 750000) && d.stateJson.size() >= 2
+        && isoDate(d.createdAt) && isoDate(d.updatedAt)
+        && d.savedAt == request.time;
+    }
+    function matchesAuthor(d) {
+      let author = get(/databases/$(database)/documents/fortatech_users/$(request.auth.uid)).data;
+      return d.userEmail == request.auth.token.email
+        && d.userName == author.name && d.userPhone == author.phone
+        && d.userArea == author.title && d.accessAreas == author.areas;
+    }
+
+    // Diretório comercial sem e-mail, telefone, senha ou dados privados.
+    match /fortatech_directory/{uid} {
+      allow read: if isOwner(uid) || isAdmin() || manages({'accessAreas': resource.data.areas});
+      allow create, update: if isOwner(uid) && isValidDirectory(request.resource.data, uid);
+      allow delete: if false;
+    }
+    match /fortatech_access/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+    match /fortatech_users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUser(request.resource.data, uid)
+        && request.resource.data.role == 'consultor'
+        && request.resource.data.get('managedArea', null) == null;
+      allow update: if isOwner(uid) && isValidUser(request.resource.data, uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['id', 'email', 'role', 'managedArea', 'createdAt']);
+      allow delete: if false;
+    }
+    match /fortatech_proposals/{proposalId} {
+      allow read: if isAuthenticated() && mayManage(resource.data);
+      allow create: if isAuthenticated() && isValidProposal(request.resource.data, proposalId)
+        && uidUnchanged(request.resource.data) && matchesAuthor(request.resource.data);
+      allow update: if isAuthenticated() && mayManage(resource.data)
+        && isValidProposal(request.resource.data, proposalId)
+        && uidNotModified(request.resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['id', 'userId', 'userName', 'userEmail', 'userPhone',
+            'userArea', 'accessAreas', 'createdAt']);
+      allow delete: if isAuthenticated() && mayManage(resource.data);
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

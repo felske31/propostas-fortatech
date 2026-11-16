@@ -1,8 +1,4 @@
-// ==========================================================================
-// FORTA TECH - GERADOR V2: SISTEMA DE AUTENTICAÇÃO E BANCO DE DADOS FIREBASE
-// Conectado ao Google Firebase (Auth + Cloud Firestore) em Tempo Real
-// ==========================================================================
-
+// FORTA TECH — autenticação real, consultas autorizadas e confirmação das gravações.
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtqiBNp_LiBC_87XSYVwYhxsrt3O9KViU",
   authDomain: "gerador-de-propostas-ft.firebaseapp.com",
@@ -13,579 +9,355 @@ const FIREBASE_CONFIG = {
 };
 
 const V2_STORAGE_KEYS = {
-  USERS: 'fortatech_v2_users',
-  SESSION: 'fortatech_v2_session',
+  USERS: 'fortatech_v2_users', SESSION: 'fortatech_v2_session',
   PROPOSALS: 'fortatech_v2_proposals'
 };
+const COMMERCIAL_AREAS = ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
+let fbApp = null, fbAuth = null, fbDb = null;
+let activeSession = null, proposalCache = [], directoryCache = [], syncStops = [];
+let authEpoch = 0, bootstrapUid = null, bootstrapPromise = null;
 
-// Mapeamento Oficial de Gestores por Área Comercial
-const AREA_MANAGERS_MAP = {
-  'priscila.badaro@fortatech.com.br': 'Inside Sales',
-  'daniela.rocha@fortatech.com.br': 'Inside Sales',
-  'rodrigo.galski@fortatech.com.br': 'Projetos',
-  'ricardo.andrade@fortatech.com.br': 'Outside Sales',
-  'silvio.nascimento@fortatech.com.br': 'Key Account',
-  'thiago.selmann@fortatech.com.br': 'Key Account'
-};
-
-function getManagedAreaForEmail(email) {
-  const clean = String(email || '').trim().toLowerCase();
-  return AREA_MANAGERS_MAP[clean] || null;
+function normalizeFbPassword(password) {
+  // Compatibilidade exclusiva com contas antigas de 4/5 caracteres.
+  const value = String(password || '');
+  return value.length < 6 ? value.padEnd(6, '0') : value;
 }
-
-function applyManagerRoleIfApplicable(userObj) {
-  if (!userObj || !userObj.email) return userObj;
-  const cleanEmail = String(userObj.email).trim().toLowerCase();
-  if (cleanEmail === 'admin@fortatech.com.br') {
-    userObj.role = 'admin';
-    return userObj;
+function archiveLegacyCache() {
+  const users = JSON.parse(localStorage.getItem(V2_STORAGE_KEYS.USERS) || '[]');
+  const proposals = JSON.parse(localStorage.getItem(V2_STORAGE_KEYS.PROPOSALS) || '[]');
+  if ((users.length || proposals.length) && !localStorage.getItem('fortatech_v2_legacy_backup')) {
+    localStorage.setItem('fortatech_v2_legacy_backup', JSON.stringify({
+      exportedAt: new Date().toISOString(),
+      users: users.map(({ password, ...profile }) => profile),
+      proposals
+    }));
   }
-  const managedArea = getManagedAreaForEmail(cleanEmail);
-  if (managedArea) {
-    userObj.role = 'gestor';
-    userObj.managedArea = managedArea;
-    if (!userObj.title || !userObj.title.toLowerCase().includes(managedArea.toLowerCase())) {
-      userObj.title = managedArea;
-    }
-  }
-  return userObj;
+  // O backup permanece no navegador para recuperar propostas que nunca sincronizaram.
+  Object.values(V2_STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
 }
-
-let fbApp = null;
-let fbAuth = null;
-let fbDb = null;
-let isFirebaseConnected = false;
-
-// Normaliza senha para o requisito mínimo de 6 caracteres do Firebase Auth
-function normalizeFbPassword(pwd) {
-  const p = String(pwd || '');
-  if (p === 'admin') return 'admin123';
-  if (p.length < 6) return p.padEnd(6, '0');
-  return p;
+function refreshAccountUI() {
+  if (typeof renderUserBadge === 'function' && document.readyState !== 'loading') renderUserBadge();
+  if (typeof updateProposalsCountBadge === 'function') updateProposalsCountBadge();
+  const modal = document.getElementById('proposals-modal-overlay');
+  if (modal && modal.style.display === 'flex' && typeof renderProposalsGrid === 'function') renderProposalsGrid();
 }
-
-// 1. INICIALIZAÇÃO DO FIREBASE + CACHE LOCAL SINCRONIZADO
-function initV2Database() {
-  // Garante usuário Admin no cache inicial
-  const users = getStoredUsers();
-  const adminExists = users.some(u => u.email.toLowerCase() === 'admin@fortatech.com.br');
-
-  const defaultAdmin = {
-    id: 'rFmJHTB3olfvPNw5wDatB6pEfcM2',
-    name: 'Administrador Forta Tech',
-    email: 'admin@fortatech.com.br',
-    password: 'admin',
-    phone: '+55 41 98508-1076',
-    role: 'admin',
-    title: 'Diretoria Comercial',
-    createdAt: new Date().toISOString()
-  };
-
-  if (!adminExists) {
-    users.push(defaultAdmin);
-    localStorage.setItem(V2_STORAGE_KEYS.USERS, JSON.stringify(users));
-  }
-
-  if (!localStorage.getItem(V2_STORAGE_KEYS.PROPOSALS)) {
-    localStorage.setItem(V2_STORAGE_KEYS.PROPOSALS, JSON.stringify([]));
-  }
-
-  // Inicializa SDK do Firebase se carregado na página
-  if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey) {
-    try {
-      fbApp = !firebase.apps.length ? firebase.initializeApp(FIREBASE_CONFIG) : firebase.app();
-      fbAuth = firebase.auth();
-      fbDb = firebase.firestore();
-      isFirebaseConnected = true;
-      console.log('[FortaTech V2] Conectado ao Firebase Cloud (' + FIREBASE_CONFIG.projectId + ')');
-
-      // Garante que o perfil do Admin esteja salvo na coleção fortatech_users do Firestore
-      fbDb.collection('fortatech_users').doc(defaultAdmin.id).set({
-        id: defaultAdmin.id,
-        name: defaultAdmin.name,
-        email: defaultAdmin.email,
-        phone: defaultAdmin.phone,
-        role: 'admin',
-        title: defaultAdmin.title,
-        createdAt: defaultAdmin.createdAt
-      }, { merge: true }).catch(() => {});
-
-      // Escuta em Tempo Real: Usuários Cadastrados na Nuvem
-      fbDb.collection('fortatech_users').onSnapshot(snapshot => {
-        const cloudUsers = [];
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const managedArea = getManagedAreaForEmail(data.email);
-          if (managedArea && (data.role !== 'gestor' || data.managedArea !== managedArea)) {
-            data.role = 'gestor';
-            data.managedArea = managedArea;
-            if (!data.title || !data.title.toLowerCase().includes(managedArea.toLowerCase())) {
-              data.title = managedArea;
-            }
-            fbDb.collection('fortatech_users').doc(doc.id).set({
-              role: 'gestor',
-              managedArea: managedArea,
-              title: data.title
-            }, { merge: true }).catch(() => {});
-          }
-          cloudUsers.push(data);
-        });
-        if (cloudUsers.length > 0) {
-          // Mescla com senhas locais para acesso offline se necessário
-          const localUsers = getStoredUsers();
-          const merged = cloudUsers.map(cu => {
-            const loc = localUsers.find(lu => lu.email.toLowerCase() === (cu.email || '').toLowerCase());
-            return applyManagerRoleIfApplicable({ ...loc, ...cu });
-          });
-          if (!merged.some(u => u.email.toLowerCase() === 'admin@fortatech.com.br')) {
-            merged.push(defaultAdmin);
-          }
-          localStorage.setItem(V2_STORAGE_KEYS.USERS, JSON.stringify(merged));
-        }
-      }, err => {
-        console.warn('[Firestore Users Sync] Aguardando ativação do banco Firestore no console:', err.message);
-      });
-
-      // Escuta em Tempo Real: Propostas Salvas na Nuvem
-      fbDb.collection('fortatech_proposals').onSnapshot(snapshot => {
-        const cloudProposals = [];
-        snapshot.forEach(doc => {
-          cloudProposals.push(doc.data());
-        });
-        // Ordena da mais recente para a mais antiga
-        cloudProposals.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
-        localStorage.setItem(V2_STORAGE_KEYS.PROPOSALS, JSON.stringify(cloudProposals));
-
-        // Atualiza contadores e tela caso o modal esteja aberto
-        if (typeof updateProposalsCountBadge === 'function') updateProposalsCountBadge();
-        const modal = document.getElementById('proposals-modal-overlay');
-        if (modal && modal.style.display === 'flex' && typeof renderProposalsGrid === 'function') {
-          renderProposalsGrid();
-        }
-      }, err => {
-        console.warn('[Firestore Proposals Sync] Aguardando ativação do banco Firestore no console:', err.message);
-      });
-
-    } catch (err) {
-      console.warn('[FortaTech V2] Erro ao iniciar Firebase:', err);
-    }
+function stopCloudSync() {
+  syncStops.forEach(stop => stop());
+  syncStops = [];
+  proposalCache = [];
+  directoryCache = [];
+}
+function reportCloudError(error) {
+  console.error('[FortaTech sincronização]', error);
+  if (typeof showV2Toast === 'function') {
+    showV2Toast('Não foi possível sincronizar. Confira sua conexão e entre novamente.');
   }
 }
-
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem(V2_STORAGE_KEYS.USERS);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
 function getStoredProposals() {
-  try {
-    const raw = localStorage.getItem(V2_STORAGE_KEYS.PROPOSALS);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
+  return V2Auth.getCurrentUser() ? proposalCache.slice() : [];
+}
+function getStoredUsers() {
+  const sellers = new Map(directoryCache.map(profile => [profile.id, { ...profile, role: 'consultor' }]));
+  for (const proposal of getStoredProposals()) {
+    sellers.set(proposal.userId, {
+      id: proposal.userId, name: proposal.userName, title: proposal.userArea,
+      areas: proposal.accessAreas || [], role: 'consultor'
+    });
+  }
+  if (activeSession) sellers.set(activeSession.id, activeSession);
+  return [...sellers.values()];
+}
+function decodeProposal(doc) {
+  const value = doc.data();
+  let stateData = value.stateData;
+  if (typeof value.stateJson === 'string') {
+    try { stateData = JSON.parse(value.stateJson); } catch (_) { stateData = null; }
+  }
+  return { ...value, id: doc.id, stateData };
+}
+function startCloudSync(session, epoch) {
+  if (session.role === 'admin' || session.role === 'gestor') {
+    const directory = fbDb.collection('fortatech_directory');
+    const query = session.role === 'admin' ? directory
+      : directory.where('areas', 'array-contains', session.managedArea);
+    syncStops.push(query.onSnapshot(snapshot => {
+      if (epoch !== authEpoch) return;
+      directoryCache = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      refreshAccountUI();
+    }, error => {
+      if (epoch !== authEpoch) return;
+      directoryCache = []; refreshAccountUI(); reportCloudError(error);
+    }));
+  }
+  const collection = fbDb.collection('fortatech_proposals');
+  const queries = session.role === 'admin' ? [collection] : [
+    collection.where('userId', '==', session.id),
+    ...(session.role === 'gestor'
+      ? [collection.where('accessAreas', 'array-contains', session.managedArea)] : [])
+  ];
+  const results = queries.map(() => new Map());
+  queries.forEach((query, index) => {
+    syncStops.push(query.onSnapshot(snapshot => {
+      if (epoch !== authEpoch || !activeSession || activeSession.id !== session.id) return;
+      results[index] = new Map(snapshot.docs.map(doc => [doc.id, decodeProposal(doc)]));
+      const combined = new Map();
+      results.forEach(result => result.forEach((value, id) => combined.set(id, value)));
+      proposalCache = [...combined.values()].sort((a, b) =>
+        String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+      refreshAccountUI();
+    }, error => {
+      if (epoch !== authEpoch) return;
+      // Falha fechada: um listener revogado nunca deixa os seus dados visíveis.
+      results[index].clear();
+      const combined = new Map();
+      results.forEach(result => result.forEach((value, id) => combined.set(id, value)));
+      proposalCache = [...combined.values()];
+      refreshAccountUI();
+      reportCloudError(error);
+    }));
+  });
+}
+async function bootstrapSession(user) {
+  if (bootstrapUid === user.uid && bootstrapPromise) return bootstrapPromise;
+  bootstrapUid = user.uid;
+  const epoch = ++authEpoch;
+  stopCloudSync();
+  activeSession = null;
+  bootstrapPromise = (async () => {
+    const [profileDoc, accessDoc, token] = await Promise.all([
+      fbDb.collection('fortatech_users').doc(user.uid).get({ source: 'server' }),
+      fbDb.collection('fortatech_access').doc(user.uid).get({ source: 'server' }),
+      user.getIdTokenResult()
+    ]);
+    if (epoch !== authEpoch || !fbAuth.currentUser || fbAuth.currentUser.uid !== user.uid) return null;
+    const profile = profileDoc.exists ? profileDoc.data() : {};
+    const access = accessDoc.exists ? accessDoc.data() : {};
+    const freshRole = user.emailVerified && Number(token.claims.auth_time) >= Number(access.validAfter)
+      && ['admin', 'gestor'].includes(access.role);
+    activeSession = {
+      id: user.uid, email: user.email,
+      name: profile.name || user.displayName || user.email.split('@')[0],
+      phone: profile.phone || '', title: profile.title || 'Inside Sales',
+      areas: Array.isArray(profile.areas) ? profile.areas : ['Inside Sales'],
+      role: freshRole ? access.role : 'consultor',
+      managedArea: freshRole && access.role === 'gestor' && COMMERCIAL_AREAS.includes(access.area)
+        ? access.area : null
+    };
+    if (activeSession.role === 'gestor' && !activeSession.managedArea) activeSession.role = 'consultor';
+    startCloudSync(activeSession, epoch);
+    refreshAccountUI();
+    return activeSession;
+  })();
+  try { return await bootstrapPromise; }
+  catch (error) {
+    if (epoch === authEpoch) {
+      activeSession = null; bootstrapUid = null; bootstrapPromise = null;
+      stopCloudSync(); refreshAccountUI();
+    }
+    throw error;
   }
 }
+function requireCloudUser() {
+  const user = V2Auth.getCurrentUser();
+  if (!fbDb || !user) throw new Error('Entre na sua conta para sincronizar com o Firebase.');
+  return user;
+}
+function initV2Database() {
+  try { archiveLegacyCache(); } catch (error) { console.warn('Cache legado preservado:', error); }
+  if (typeof firebase === 'undefined') return;
+  fbApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+  fbAuth = firebase.auth();
+  fbDb = firebase.firestore();
+  fbAuth.onAuthStateChanged(user => {
+    if (user) {
+      bootstrapSession(user).catch(reportCloudError);
+    } else {
+      ++authEpoch; bootstrapUid = null; bootstrapPromise = null;
+      activeSession = null; stopCloudSync(); refreshAccountUI();
+    }
+  });
+}
 
-// 2. SERVIÇO DE AUTENTICAÇÃO (FIREBASE AUTH + FIRESTORE PROFILE)
 const V2Auth = {
   getCurrentUser() {
-    try {
-      const raw = localStorage.getItem(V2_STORAGE_KEYS.SESSION);
-      if (!raw) return null;
-      const user = JSON.parse(raw);
-      return applyManagerRoleIfApplicable(user);
-    } catch (e) {
-      return null;
-    }
+    return fbAuth && fbAuth.currentUser && activeSession
+      && fbAuth.currentUser.uid === activeSession.id ? activeSession : null;
   },
-
   async login(email, password) {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const isDefaultAdmin = (cleanEmail === 'admin@fortatech.com.br' && (password === 'admin' || password === 'admin123'));
-    const managedArea = getManagedAreaForEmail(cleanEmail);
-
-    // 1. Tenta autenticar no Firebase Authentication na nuvem
-    if (isFirebaseConnected && fbAuth) {
-      try {
-        const fbPass = isDefaultAdmin ? 'admin123' : normalizeFbPassword(password);
-        const cred = await fbAuth.signInWithEmailAndPassword(cleanEmail, fbPass);
-        const uid = cred.user.uid;
-
-        // Busca dados complementares do perfil no Firestore
-        let profile = null;
-        if (fbDb) {
-          try {
-            const doc = await fbDb.collection('fortatech_users').doc(uid).get();
-            if (doc.exists) profile = doc.data();
-          } catch (e) {}
-        }
-
-        const localMatch = getStoredUsers().find(u => u.email.toLowerCase() === cleanEmail);
-        const sessionData = applyManagerRoleIfApplicable({
-          id: uid,
-          name: (profile && profile.name) || (localMatch && localMatch.name) || (isDefaultAdmin ? 'Administrador Forta Tech' : cleanEmail.split('@')[0]),
-          email: cleanEmail,
-          phone: (profile && profile.phone) || (localMatch && localMatch.phone) || '+55 41 98508-1076',
-          role: isDefaultAdmin ? 'admin' : (managedArea ? 'gestor' : ((profile && profile.role) || (localMatch && localMatch.role) || 'consultor')),
-          managedArea: managedArea || (profile && profile.managedArea) || null,
-          title: (profile && profile.title) || (localMatch && localMatch.title) || managedArea || (isDefaultAdmin ? 'Diretoria Comercial' : 'Consultor Técnico Comercial')
-        });
-
-        localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
-        return sessionData;
-      } catch (fbErr) {
-        // Se for erro de senha incorreta no Firebase e não bater no local, avisa o usuário
-        const localUsers = getStoredUsers();
-        const localUser = localUsers.find(u => u.email.toLowerCase() === cleanEmail && (u.password === password || (isDefaultAdmin && password === 'admin')));
-        if (!localUser) {
-          throw new Error('E-mail ou senha inválidos.');
-        }
-        const sessionData = applyManagerRoleIfApplicable({
-          id: localUser.id,
-          name: localUser.name,
-          email: localUser.email,
-          phone: localUser.phone || '+55 41 98508-1076',
-          role: localUser.role || 'consultor',
-          managedArea: localUser.managedArea || null,
-          title: localUser.title || 'Consultor Técnico Comercial'
-        });
-        localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
-        return sessionData;
-      }
+    if (!fbAuth) throw new Error('Firebase indisponível. Verifique sua conexão.');
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (cleanEmail === 'admin@fortatech.com.br' && ['admin', 'admin123'].includes(password)) {
+      throw new Error('A senha administrativa padrão foi desativada. Use “Redefinir senha”.');
     }
-
-    // Fallback local
-    const users = getStoredUsers();
-    const user = users.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
+    try {
+      const credential = await fbAuth.signInWithEmailAndPassword(cleanEmail, normalizeFbPassword(password));
+      const session = await bootstrapSession(credential.user);
+      if (!session) throw new Error('A sessão mudou. Entre novamente.');
+      const profileRef = fbDb.collection('fortatech_users').doc(session.id);
+      const profile = await profileRef.get({ source: 'server' });
+      if (!profile.exists) {
+        await profileRef.set({
+          id: session.id, name: session.name, email: session.email, phone: session.phone,
+          role: 'consultor', title: session.title, areas: session.areas,
+          createdAt: new Date().toISOString()
+        });
+      }
+      if (session.role !== 'admin') await fbDb.collection('fortatech_directory').doc(session.id).set({
+        id: session.id, name: session.name, title: session.title, areas: session.areas
+      });
+      return session;
+    } catch (error) {
+      this.logout();
+      if (String(error.code || '').startsWith('auth/')) {
+        throw new Error('Não foi possível entrar. Confira e-mail, senha e conexão.');
+      }
+      throw error;
+    }
+  },
+  async signUp(data) {
+    if (!fbAuth) throw new Error('Firebase indisponível. Verifique sua conexão.');
+    const email = String(data.email || '').trim().toLowerCase();
+    const name = String(data.name || '').trim();
+    const areas = COMMERCIAL_AREAS.filter(area => (data.areas || []).includes(area));
+    if (!email.includes('@') || email.length > 254) throw new Error('Informe um e-mail válido.');
+    if (name.length < 2 || name.length > 200) throw new Error('Informe seu nome, entre 2 e 200 caracteres.');
+    if (String(data.password || '').length < 6) throw new Error('A senha deve ter no mínimo 6 caracteres.');
+    if (!areas.length) throw new Error('Selecione ao menos uma área comercial.');
+    if (String(data.phone || '').length > 80) throw new Error('Telefone muito longo.');
+    try {
+      const credential = await fbAuth.createUserWithEmailAndPassword(email, data.password);
+      const profile = {
+        id: credential.user.uid, name, email, phone: data.phone || '', role: 'consultor',
+        title: areas.join(' / '), areas, createdAt: new Date().toISOString()
+      };
+      await fbDb.collection('fortatech_users').doc(profile.id).set(profile);
+      await fbDb.collection('fortatech_directory').doc(profile.id).set({
+        id: profile.id, name: profile.name, title: profile.title, areas: profile.areas
+      });
+      // Descarta o bootstrap disparado pela criação e recarrega o perfil completo.
+      ++authEpoch; bootstrapUid = null; bootstrapPromise = null;
+      return await bootstrapSession(credential.user);
+    } catch (error) {
+      this.logout();
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('E-mail já cadastrado. Entre na conta ou use “Redefinir senha”.');
+      }
+      throw error;
+    }
+  },
+  async resetPassword(email) {
+    if (!fbAuth) throw new Error('Firebase indisponível.');
+    const address = String(email || '').trim();
+    if (!address.includes('@')) throw new Error('Preencha seu e-mail de acesso.');
+    await fbAuth.sendPasswordResetEmail(address);
+  },
+  async verifyEmail(email, password) {
+    if (!fbAuth) throw new Error('Firebase indisponível.');
+    let user = fbAuth.currentUser;
     if (!user) {
-      throw new Error('E-mail ou senha inválidos.');
+      const credential = await fbAuth.signInWithEmailAndPassword(
+        String(email || '').trim(), normalizeFbPassword(password));
+      user = credential.user;
     }
-
-    const sessionData = applyManagerRoleIfApplicable({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '+55 41 98508-1076',
-      role: user.role || 'consultor',
-      managedArea: user.managedArea || null,
-      title: user.title || 'Consultor Técnico Comercial'
-    });
-
-    localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
-    return sessionData;
+    if (user.emailVerified) throw new Error('E-mail já verificado. Saia e entre novamente para atualizar seu acesso.');
+    await user.sendEmailVerification();
+    this.logout();
   },
-
-  async signUp(userData) {
-    const cleanEmail = (userData.email || '').trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
-      throw new Error('Informe um e-mail válido.');
-    }
-    if (!userData.password || userData.password.length < 4) {
-      throw new Error('A senha deve ter no mínimo 4 caracteres.');
-    }
-    if (!userData.name || userData.name.trim().length < 2) {
-      throw new Error('Informe o seu nome completo.');
-    }
-
-    let uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-
-    // 1. Registra no Firebase Auth na nuvem
-    if (isFirebaseConnected && fbAuth) {
-      try {
-        const fbPass = normalizeFbPassword(userData.password);
-        const cred = await fbAuth.createUserWithEmailAndPassword(cleanEmail, fbPass);
-        uid = cred.user.uid;
-      } catch (fbErr) {
-        if (fbErr.code === 'auth/email-already-in-use') {
-          throw new Error('Já existe uma conta cadastrada com este e-mail.');
-        }
-        console.warn('[Firebase Auth SignUp]', fbErr.message);
-      }
-    } else {
-      const users = getStoredUsers();
-      if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-        throw new Error('Já existe uma conta cadastrada com este e-mail.');
-      }
-    }
-
-    const managedArea = getManagedAreaForEmail(cleanEmail);
-    const effectiveTitle = managedArea || userData.title || 'Inside Sales';
-    const effectiveAreas = managedArea
-      ? Array.from(new Set([managedArea, ...(userData.areas || [])]))
-      : (userData.areas || [effectiveTitle]);
-
-    const newUser = applyManagerRoleIfApplicable({
-      id: uid,
-      name: userData.name.trim(),
-      email: cleanEmail,
-      password: userData.password,
-      phone: userData.phone || '',
-      role: managedArea ? 'gestor' : 'consultor',
-      managedArea: managedArea || null,
-      title: effectiveTitle,
-      areas: effectiveAreas,
-      createdAt: new Date().toISOString()
-    });
-
-    // Salva localmente
-    const users = getStoredUsers().filter(u => u.email.toLowerCase() !== cleanEmail);
-    users.push(newUser);
-    localStorage.setItem(V2_STORAGE_KEYS.USERS, JSON.stringify(users));
-
-    // Salva no Cloud Firestore
-    if (isFirebaseConnected && fbDb) {
-      fbDb.collection('fortatech_users').doc(uid).set({
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        role: newUser.role,
-        managedArea: newUser.managedArea || null,
-        title: newUser.title,
-        areas: newUser.areas,
-        createdAt: newUser.createdAt
-      }).catch(e => console.warn('[Firestore Save User]', e.message));
-    }
-
-    const sessionData = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      role: newUser.role,
-      managedArea: newUser.managedArea || null,
-      title: newUser.title,
-      areas: newUser.areas
-    };
-
-    localStorage.setItem(V2_STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
-    return sessionData;
-  },
-
   logout() {
-    if (isFirebaseConnected && fbAuth) {
-      fbAuth.signOut().catch(() => {});
-    }
-    localStorage.removeItem(V2_STORAGE_KEYS.SESSION);
+    ++authEpoch; bootstrapUid = null; bootstrapPromise = null;
+    activeSession = null; stopCloudSync();
+    if (fbAuth) fbAuth.signOut().catch(reportCloudError);
+    refreshAccountUI();
   }
 };
 
-// 3. SERVIÇO DE BANCO DE DADOS DE PROPOSTAS (CLOUD FIRESTORE + CACHE LOCAL)
 const V2DB = {
-  // Verifica se uma proposta pertence a determinada Área Comercial
-  doesProposalBelongToArea(proposal, areaName) {
-    if (!proposal || !areaName) return false;
-    const targetArea = String(areaName).trim().toLowerCase();
-    const propArea = String(proposal.userArea || '').toLowerCase();
-    if (propArea.includes(targetArea)) return true;
-
-    // Caso a proposta antiga não tenha userArea gravado, verifica o cadastro do vendedor
-    const users = getStoredUsers();
-    const author = users.find(u =>
-      (proposal.userId && u.id === proposal.userId) ||
-      (proposal.userEmail && u.email && u.email.toLowerCase() === proposal.userEmail.toLowerCase())
-    );
-    if (author) {
-      const authorTitle = String(author.title || '').toLowerCase();
-      const authorManaged = String(author.managedArea || '').toLowerCase();
-      const authorAreas = Array.isArray(author.areas) ? author.areas.map(a => String(a).toLowerCase()) : [];
-      if (authorTitle.includes(targetArea) || authorManaged === targetArea || authorAreas.some(a => a.includes(targetArea))) {
-        return true;
-      }
-    }
-    return false;
+  doesProposalBelongToArea(proposal, area) {
+    return !!proposal && Array.isArray(proposal.accessAreas) && proposal.accessAreas.includes(area);
   },
-
   canUserManageProposal(user, proposal) {
-    if (!user || !proposal) return false;
-    if (user.role === 'admin') return true;
-    if (proposal.userId === user.id || (proposal.userEmail && user.email && proposal.userEmail.toLowerCase() === user.email.toLowerCase())) {
-      return true;
-    }
-    if (user.role === 'gestor' && user.managedArea) {
-      return this.doesProposalBelongToArea(proposal, user.managedArea);
-    }
-    return false;
+    return !!user && !!proposal && (user.role === 'admin' || proposal.userId === user.id
+      || (user.role === 'gestor' && this.doesProposalBelongToArea(proposal, user.managedArea)));
   },
-
-  saveProposal(proposalPayload) {
-    const user = V2Auth.getCurrentUser();
-    if (!user) {
-      throw new Error('Você precisa estar logado para salvar propostas.');
-    }
-
-    const proposals = getStoredProposals();
+  async saveProposal(payload) {
+    const user = requireCloudUser();
+    const previous = payload.id ? this.getProposalById(payload.id) : null;
+    if (payload.id && !previous) throw new Error('Proposta não encontrada.');
+    if (previous && !this.canUserManageProposal(user, previous)) throw new Error('Acesso negado.');
     const now = new Date().toISOString();
-    let savedRecord = null;
-
-    if (proposalPayload.id) {
-      const index = proposals.findIndex(p => p.id === proposalPayload.id);
-      if (index === -1) {
-        throw new Error('Proposta não encontrada para atualização.');
-      }
-
-      if (!this.canUserManageProposal(user, proposals[index])) {
-        throw new Error('Você não tem permissão para editar propostas de outro vendedor.');
-      }
-
-      proposals[index] = {
-        ...proposals[index],
-        ...proposalPayload,
-        updatedAt: now
-      };
-      savedRecord = proposals[index];
-    } else {
-      savedRecord = {
-        id: 'prop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        userPhone: user.phone || '',
-        userArea: user.managedArea || user.title || '',
-        clientName: proposalPayload.clientName || 'Cliente Sem Nome',
-        clientCity: proposalPayload.clientCity || '',
-        proposalNumber: proposalPayload.proposalNumber || ('PROP-' + new Date().getFullYear() + '/' + Math.floor(1000 + Math.random() * 9000)),
-        proposalDate: proposalPayload.proposalDate || new Date().toISOString().split('T')[0],
-        totalValue: proposalPayload.totalValue || 0,
-        status: proposalPayload.status || 'sent',
-        stateData: proposalPayload.stateData,
-        createdAt: now,
-        updatedAt: now
-      };
-      proposals.unshift(savedRecord);
-    }
-
-    localStorage.setItem(V2_STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
-
-    // Sincroniza imediatamente com o Cloud Firestore na nuvem
-    if (isFirebaseConnected && fbDb && savedRecord) {
-      fbDb.collection('fortatech_proposals').doc(savedRecord.id).set(savedRecord)
-        .then(() => console.log('[Firestore] Proposta sincronizada na nuvem:', savedRecord.id))
-        .catch(err => console.warn('[Firestore Save Proposal]', err.message));
-    }
-
-    return savedRecord;
+    const record = {
+      ...(previous || {
+        id: fbDb.collection('fortatech_proposals').doc().id,
+        userId: user.id, userName: user.name, userEmail: user.email, userPhone: user.phone,
+        userArea: user.title, accessAreas: user.areas, createdAt: now
+      }),
+      clientName: payload.clientName || 'Cliente Sem Nome', clientCity: payload.clientCity || '',
+      proposalNumber: payload.proposalNumber || 'PROP-' + new Date().getFullYear(),
+      proposalDate: payload.proposalDate || now.slice(0, 10),
+      totalValue: payload.totalValue || 0, status: previous ? previous.status : (payload.status || 'sent'),
+      stateJson: JSON.stringify(payload.stateData), updatedAt: now,
+      savedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    delete record.stateData;
+    if (!record.stateJson || record.stateJson.length > 750000) throw new Error('Proposta muito grande para salvar.');
+    await fbDb.collection('fortatech_proposals').doc(record.id).set(record);
+    if (V2Auth.getCurrentUser() !== user) throw new Error('A sessão mudou durante a gravação.');
+    const localRecord = { ...record, stateData: payload.stateData };
+    proposalCache = [localRecord, ...proposalCache.filter(item => item.id !== record.id)];
+    refreshAccountUI();
+    return localRecord;
   },
-
   getProposals(filters = {}) {
     const user = V2Auth.getCurrentUser();
     if (!user) return [];
-
-    let list = getStoredProposals();
-
-    if (user.role === 'admin') {
-      if (filters.sellerId && filters.sellerId !== 'all') {
-        list = list.filter(p => p.userId === filters.sellerId);
-      }
-      if (filters.area && filters.area !== 'all') {
-        list = list.filter(p => this.doesProposalBelongToArea(p, filters.area));
-      }
-    } else if (user.role === 'gestor' && user.managedArea) {
-      // Gestor de área vê todas as propostas da sua área (e as suas próprias)
-      list = list.filter(p =>
-        this.doesProposalBelongToArea(p, user.managedArea) ||
-        p.userId === user.id ||
-        (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase())
-      );
-      if (filters.sellerId && filters.sellerId !== 'all') {
-        list = list.filter(p => p.userId === filters.sellerId);
-      }
-    } else {
-      // Consultor vê apenas as suas próprias propostas
-      list = list.filter(p => p.userId === user.id || (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()));
+    let list = getStoredProposals().filter(proposal => this.canUserManageProposal(user, proposal));
+    if (filters.sellerId && filters.sellerId !== 'all') list = list.filter(p => p.userId === filters.sellerId);
+    if (filters.area && filters.area !== 'all') list = list.filter(p => this.doesProposalBelongToArea(p, filters.area));
+    if (filters.status && filters.status !== 'all') list = list.filter(p => p.status === filters.status);
+    if (filters.query) {
+      const search = filters.query.trim().toLowerCase();
+      list = list.filter(p => [p.clientName, p.clientCity, p.proposalNumber, p.userName]
+        .some(value => String(value || '').toLowerCase().includes(search)));
     }
-
-    if (filters.status && filters.status !== 'all') {
-      list = list.filter(p => p.status === filters.status);
-    }
-
-    if (filters.query && filters.query.trim().length > 0) {
-      const q = filters.query.trim().toLowerCase();
-      list = list.filter(p =>
-        (p.clientName && p.clientName.toLowerCase().includes(q)) ||
-        (p.proposalNumber && p.proposalNumber.toLowerCase().includes(q)) ||
-        (p.clientCity && p.clientCity.toLowerCase().includes(q)) ||
-        (p.userName && p.userName.toLowerCase().includes(q))
-      );
-    }
-
     return list;
   },
-
   getProposalById(id) {
-    const proposals = getStoredProposals();
-    return proposals.find(p => p.id === id) || null;
+    return this.getProposals().find(p => p.id === id) || null;
   },
-
-  deleteProposal(id) {
-    const user = V2Auth.getCurrentUser();
-    if (!user) throw new Error('Não autenticado.');
-
-    let proposals = getStoredProposals();
-    const target = proposals.find(p => p.id === id);
-    if (!target) return;
-
-    if (!this.canUserManageProposal(user, target)) {
-      throw new Error('Você não tem permissão para excluir esta proposta.');
-    }
-
-    proposals = proposals.filter(p => p.id !== id);
-    localStorage.setItem(V2_STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
-
-    if (isFirebaseConnected && fbDb) {
-      fbDb.collection('fortatech_proposals').doc(id).delete()
-        .catch(err => console.warn('[Firestore Delete]', err.message));
-    }
+  async deleteProposal(id) {
+    const user = requireCloudUser();
+    const target = this.getProposalById(id);
+    if (!this.canUserManageProposal(user, target)) throw new Error('Proposta não encontrada ou acesso negado.');
+    await fbDb.collection('fortatech_proposals').doc(id).delete();
+    if (V2Auth.getCurrentUser() === user) proposalCache = proposalCache.filter(p => p.id !== id);
+    refreshAccountUI();
   },
-
-  updateStatus(id, newStatus) {
-    const proposals = getStoredProposals();
-    const item = proposals.find(p => p.id === id);
-    if (item) {
-      item.status = newStatus;
-      item.updatedAt = new Date().toISOString();
-      localStorage.setItem(V2_STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
-
-      if (isFirebaseConnected && fbDb) {
-        fbDb.collection('fortatech_proposals').doc(id).update({
-          status: newStatus,
-          updatedAt: item.updatedAt
-        }).catch(err => console.warn('[Firestore Status Update]', err.message));
-      }
-    }
+  async updateStatus(id, status) {
+    const user = requireCloudUser();
+    const target = this.getProposalById(id);
+    if (!this.canUserManageProposal(user, target)) throw new Error('Proposta não encontrada ou acesso negado.');
+    if (!['draft', 'sent', 'approved', 'rejected'].includes(status)) throw new Error('Status inválido.');
+    const updatedAt = new Date().toISOString();
+    await fbDb.collection('fortatech_proposals').doc(id).update({
+      status, updatedAt, savedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (V2Auth.getCurrentUser() === user) Object.assign(target, { status, updatedAt });
+    refreshAccountUI();
   },
-
-  duplicateProposal(id) {
+  async duplicateProposal(id) {
     const original = this.getProposalById(id);
     if (!original) throw new Error('Proposta não encontrada.');
-
     const clone = JSON.parse(JSON.stringify(original));
     delete clone.id;
-    clone.proposalNumber = clone.proposalNumber + ' (CÓPIA)';
     clone.status = 'draft';
-    clone.clientName = clone.clientName + ' (Cópia)';
-    if (clone.stateData && clone.stateData.proposal) {
-      clone.stateData.proposal.number = clone.proposalNumber;
-    }
+    clone.clientName += ' (Cópia)';
+    clone.proposalNumber += ' (CÓPIA)';
+    if (clone.stateData && clone.stateData.proposal) clone.stateData.proposal.number = clone.proposalNumber;
     return this.saveProposal(clone);
   },
-
-  getAllSellers(areaFilter = null) {
-    const users = getStoredUsers().filter(u => u.role !== 'admin');
-    if (!areaFilter) return users;
-    const target = String(areaFilter).trim().toLowerCase();
-    return users.filter(u => {
-      const t = String(u.title || '').toLowerCase();
-      const m = String(u.managedArea || '').toLowerCase();
-      const arr = Array.isArray(u.areas) ? u.areas.map(a => String(a).toLowerCase()) : [];
-      return t.includes(target) || m === target || arr.some(a => a.includes(target));
-    });
+  getAllSellers(area = null) {
+    return getStoredUsers().filter(user => user.role !== 'admin'
+      && (!area || (user.areas || []).includes(area)));
   }
 };
-
-// Inicializa o banco de dados na carga do script
 initV2Database();
