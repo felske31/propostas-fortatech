@@ -14,7 +14,7 @@ const V2_STORAGE_KEYS = {
 };
 const COMMERCIAL_AREAS = ['Inside Sales', 'Key Account', 'Projetos', 'Outside Sales'];
 let fbApp = null, fbAuth = null, fbDb = null;
-let activeSession = null, proposalCache = [], syncStops = [];
+let activeSession = null, proposalCache = [], directoryCache = [], syncStops = [];
 let authEpoch = 0, bootstrapUid = null, bootstrapPromise = null;
 
 function normalizeFbPassword(password) {
@@ -45,6 +45,7 @@ function stopCloudSync() {
   syncStops.forEach(stop => stop());
   syncStops = [];
   proposalCache = [];
+  directoryCache = [];
 }
 function reportCloudError(error) {
   console.error('[FortaTech sincronização]', error);
@@ -56,7 +57,7 @@ function getStoredProposals() {
   return V2Auth.getCurrentUser() ? proposalCache.slice() : [];
 }
 function getStoredUsers() {
-  const sellers = new Map();
+  const sellers = new Map(directoryCache.map(profile => [profile.id, { ...profile, role: 'consultor' }]));
   for (const proposal of getStoredProposals()) {
     sellers.set(proposal.userId, {
       id: proposal.userId, name: proposal.userName, title: proposal.userArea,
@@ -75,6 +76,19 @@ function decodeProposal(doc) {
   return { ...value, id: doc.id, stateData };
 }
 function startCloudSync(session, epoch) {
+  if (session.role === 'admin' || session.role === 'gestor') {
+    const directory = fbDb.collection('fortatech_directory');
+    const query = session.role === 'admin' ? directory
+      : directory.where('areas', 'array-contains', session.managedArea);
+    syncStops.push(query.onSnapshot(snapshot => {
+      if (epoch !== authEpoch) return;
+      directoryCache = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      refreshAccountUI();
+    }, error => {
+      if (epoch !== authEpoch) return;
+      directoryCache = []; refreshAccountUI(); reportCloudError(error);
+    }));
+  }
   const collection = fbDb.collection('fortatech_proposals');
   const queries = session.role === 'admin' ? [collection] : [
     collection.where('userId', '==', session.id),
@@ -188,6 +202,9 @@ const V2Auth = {
           createdAt: new Date().toISOString()
         });
       }
+      if (session.role !== 'admin') await fbDb.collection('fortatech_directory').doc(session.id).set({
+        id: session.id, name: session.name, title: session.title, areas: session.areas
+      });
       return session;
     } catch (error) {
       this.logout();
@@ -214,6 +231,9 @@ const V2Auth = {
         title: areas.join(' / '), areas, createdAt: new Date().toISOString()
       };
       await fbDb.collection('fortatech_users').doc(profile.id).set(profile);
+      await fbDb.collection('fortatech_directory').doc(profile.id).set({
+        id: profile.id, name: profile.name, title: profile.title, areas: profile.areas
+      });
       // Descarta o bootstrap disparado pela criação e recarrega o perfil completo.
       ++authEpoch; bootstrapUid = null; bootstrapPromise = null;
       return await bootstrapSession(credential.user);
