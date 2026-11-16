@@ -2050,6 +2050,22 @@ function bindAuthModalEvents() {
     tabSignup.addEventListener('click', () => openAuthModal('signup'));
   }
 
+  for (const [buttonId, action, message] of [
+    ['btn-reset-password', () => V2Auth.resetPassword(document.getElementById('login-email').value),
+      'Se houver uma conta para este e-mail, você receberá as instruções para redefinir a senha.'],
+    ['btn-verify-email', () => V2Auth.verifyEmail(
+      document.getElementById('login-email').value, document.getElementById('login-password').value),
+      'Confira seu e-mail e clique no link de verificação. Depois, entre novamente.']
+  ]) {
+    const button = document.getElementById(buttonId);
+    if (button) button.addEventListener('click', async () => {
+      button.disabled = true;
+      try { await action(); alert(message); }
+      catch (error) { alert(error.message || 'Não foi possível concluir.'); }
+      finally { button.disabled = false; }
+    });
+  }
+
   // Submit Login
   if (formLogin) {
     formLogin.addEventListener('submit', async (e) => {
@@ -2121,7 +2137,7 @@ function bindAuthModalEvents() {
 }
 
 // 4. Salvar Proposta no Banco de Dados
-function saveCurrentProposal() {
+async function saveCurrentProposal() {
   const currentUser = V2Auth.getCurrentUser();
   if (!currentUser) {
     alert('Por favor, faça login ou crie sua conta para salvar suas propostas no sistema.');
@@ -2142,7 +2158,7 @@ function saveCurrentProposal() {
   };
 
   try {
-    const saved = V2DB.saveProposal(proposalPayload);
+    const saved = await V2DB.saveProposal(proposalPayload);
     currentEditingProposalId = saved.id;
     updateEditingBanner();
     updateProposalsCountBadge();
@@ -2411,37 +2427,42 @@ function renderProposalsGrid() {
   });
 
   container.querySelectorAll('.btn-duplicate-proposal').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id');
-      V2DB.duplicateProposal(id);
-      renderProposalsGrid();
-      updateProposalsCountBadge();
-      showV2Toast('Proposta duplicada com sucesso!');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await V2DB.duplicateProposal(btn.getAttribute('data-id'));
+        renderProposalsGrid();
+        updateProposalsCountBadge();
+        showV2Toast('Proposta duplicada com sucesso!');
+      } catch (error) { alert(error.message || 'Erro ao duplicar proposta.'); }
+      finally { btn.disabled = false; }
     });
   });
 
   container.querySelectorAll('.btn-delete-proposal').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      if (confirm('Tem certeza que deseja excluir esta proposta do histórico?')) {
-        V2DB.deleteProposal(id);
-        if (currentEditingProposalId === id) {
-          cancelEditingProposal();
-        }
+      if (!confirm('Tem certeza que deseja excluir esta proposta do histórico?')) return;
+      btn.disabled = true;
+      try {
+        await V2DB.deleteProposal(id);
+        if (currentEditingProposalId === id) cancelEditingProposal();
         renderProposalsGrid();
         updateProposalsCountBadge();
         showV2Toast('Proposta excluída.');
-      }
+      } catch (error) { alert(error.message || 'Erro ao excluir proposta.'); }
+      finally { btn.disabled = false; }
     });
   });
 
   container.querySelectorAll('.status-select-action').forEach(select => {
-    select.addEventListener('change', (e) => {
-      const id = e.target.getAttribute('data-id');
-      const newStatus = e.target.value;
-      V2DB.updateStatus(id, newStatus);
-      renderProposalsGrid();
-      showV2Toast('Status da proposta atualizado.');
+    select.addEventListener('change', async (e) => {
+      select.disabled = true;
+      try {
+        await V2DB.updateStatus(e.target.getAttribute('data-id'), e.target.value);
+        showV2Toast('Status da proposta atualizado.');
+      } catch (error) { alert(error.message || 'Erro ao atualizar status.'); }
+      finally { select.disabled = false; renderProposalsGrid(); }
     });
   });
 }
